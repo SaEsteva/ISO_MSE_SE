@@ -20,9 +20,13 @@
 
 uint32_t stack1[STACK_SIZE];		//espacio reservado para el stack de la tarea 1
 uint32_t stack2[STACK_SIZE];		//espacio reservado para el stack de la tarea 2
+uint32_t stack3[STACK_SIZE];		//espacio reservado para el stack de la tarea 3
+uint32_t stack4[STACK_SIZE];		//espacio reservado para el stack de la tarea 4
 
 uint32_t sp_tarea1;					//Stack Pointer para la tarea 1
 uint32_t sp_tarea2;					//Stack Pointer para la tarea 2
+uint32_t sp_tarea3;					//Stack Pointer para la tarea 3
+uint32_t sp_tarea4;					//Stack Pointer para la tarea 4
 
 
 /*==================[internal functions declaration]=========================*/
@@ -58,6 +62,19 @@ void tarea2(void)  {
 	}
 }
 
+void tarea3(void)  {
+	int k;
+	while (1) {
+		k++;
+	}
+}
+
+void tarea4(void)  {
+	int l;
+	while (1) {
+		l++;
+	}
+}
 /*============================================================================*/
 
 int main(void)  {
@@ -66,6 +83,9 @@ int main(void)  {
 
 	os_InitTarea(tarea1, &stack1, &sp_tarea1);
 	os_InitTarea(tarea2, &stack2, &sp_tarea2);
+	os_InitTarea(tarea3, &stack3, &sp_tarea3);
+	os_InitTarea(tarea4, &stack4, &sp_tarea4);
+
 
 	while (1) {
 		__WFI();

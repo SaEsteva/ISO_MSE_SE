@@ -6,29 +6,24 @@
  */
 /*==================[inclusions]=============================================*/
 
-#include "../inc/main.h"
-
+#include <stdlib.h>
+#include "main.h"
 #include "board.h"
-
 #include "OS_Core.h"
 
 /*==================[macros and definitions]=================================*/
 
 #define MILISEC		1000
-
+#define CANT_TAREAS 4
+uint8_t IDE_tare;
 /*==================[Global data declaration]==============================*/
 
-uint32_t stack1[STACK_SIZE];		//espacio reservado para el stack de la tarea 1
-uint32_t stack2[STACK_SIZE];		//espacio reservado para el stack de la tarea 2
-uint32_t stack3[STACK_SIZE];		//espacio reservado para el stack de la tarea 3
-uint32_t stack4[STACK_SIZE];		//espacio reservado para el stack de la tarea 4
+tarea tareaStruct1;		//estructura tarea de la tarea 1
+tarea tareaStruct2;		//estructura tarea de la tarea 2
+tarea tareaStruct3;		//estructura tarea de la tarea 3
+tarea tareaStruct4;		//estructura tarea de la tarea 4
 
-uint32_t sp_tarea1;					//Stack Pointer para la tarea 1
-uint32_t sp_tarea2;					//Stack Pointer para la tarea 2
-uint32_t sp_tarea3;					//Stack Pointer para la tarea 3
-uint32_t sp_tarea4;					//Stack Pointer para la tarea 4
-
-
+tarea* Tareas[MAX_NUM_TASK];
 /*==================[internal functions declaration]=========================*/
 
 /*==================[internal data definition]===============================*/
@@ -81,14 +76,25 @@ int main(void)  {
 
 	initHardware();
 
-	os_InitTarea(tarea1, &stack1, &sp_tarea1);
-	os_InitTarea(tarea2, &stack2, &sp_tarea2);
-	os_InitTarea(tarea3, &stack3, &sp_tarea3);
-	os_InitTarea(tarea4, &stack4, &sp_tarea4);
+	os_InitTarea(&tareaStruct1,tarea1,1,0,"tarea1");
+	Tareas[0] = &tareaStruct1;
+	os_InitTarea(&tareaStruct2,tarea2,2,0,"tarea2");
+	Tareas[1] = &tareaStruct2;
+	os_InitTarea(&tareaStruct3,tarea3,3,0,"tarea3");
+	Tareas[2] = &tareaStruct3;
+	os_InitTarea(&tareaStruct4,tarea4,4,0,"tarea4");
+	Tareas[3] = &tareaStruct4;
+
+	for(uint8_t i = CANT_TAREAS; i<MAX_NUM_TASK;i++){
+		Tareas[i]=NULL;
+	}
+
+	os_SistemInit(Tareas,CANT_TAREAS);
+
+	initTareaIdle(&tareaStruct1);
 
 
 	while (1) {
-		__WFI();
 	}
 }
 

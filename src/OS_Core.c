@@ -10,7 +10,22 @@
 /*==================[definicion de variables globales]=================================*/
 static osControl controlStrct_OS;
 static tarea tareaIdle;
-extern uint8_t IDE_tare;
+extern uint8_t Index_tareas;
+
+/*************************************************************************************************
+	 *  @brief Tarea Idle del OS.
+     *
+     *  @details
+     *   Tarea Idle con prioridad mínima de ejecución.
+     *
+	 *  @param 		None.
+	 *  @return     None.
+***************************************************************************************************/
+void os_Idle_task(void)  {
+		while (1) {
+			__WFI();
+		}
+}
 
 /*************************************************************************************************
 	 *  @brief Inicializa las tareas que correran en el OS.
@@ -39,22 +54,22 @@ void os_InitTarea(tarea *tarea,void *entryPoint,uint8_t id_tarea, uint8_t priori
 
 	tarea->entry_point = entryPoint;
 	tarea->id = id_tarea;
-	tarea->prioridad = prioridad_tarea;
+	tarea->prioridad = p_TaskIdle+prioridad_tarea;
 	strcpy(tarea->nombre,Nombre);
 	tarea->estado = TAREA_READY;
 }
 
 /*************************************************************************************************
-	 *  @brief Inicializa las tareas que correran en el OS.
+	 *  @brief Inicializa la tarea Idle del OS.
      *
      *  @details
      *
-	 *  @param 		Pointer to the task to be the Idle.
+	 *  @param 		None.
 	 *  @return     None.
 ***************************************************************************************************/
-void initTareaIdle(tarea* tareaToIdle){
+void os_InitTareaIdle(void){
 
-	tareaIdle = *tareaToIdle;
+	os_InitTarea(&tareaIdle,os_Idle_task,id_TaskIdle,p_TaskIdle,"IdleTask");
 }
 
 /*************************************************************************************************
@@ -68,17 +83,19 @@ void initTareaIdle(tarea* tareaToIdle){
 ***************************************************************************************************/
 void os_SistemInit(tarea* array[MAX_NUM_TASK],uint8_t numOfTask)  {
 
+	NVIC_SetPriority(PendSV_IRQn, (1 << __NVIC_PRIO_BITS)-1);
 	controlStrct_OS.schedulerIRQ = false;
 	controlStrct_OS.tarea_actual = NULL;
 	controlStrct_OS.tarea_siguiente = NULL;
 	controlStrct_OS.error = 0;
 	controlStrct_OS.estado_sistema = OS_RESET;
 	controlStrct_OS.cant_tareas = numOfTask;
-	for(uint8_t i = 0; i<MAX_NUM_TASK;i++){
-		if (i<numOfTask)controlStrct_OS.array_tareas[i]=array[i];
+	controlStrct_OS.array_tareas[id_TaskIdle]=&tareaIdle;
+	for(uint8_t i = 1; i<MAX_NUM_TASK+1;i++){
+		if (i<numOfTask)controlStrct_OS.array_tareas[i]=array[i-1];
 		else controlStrct_OS.array_tareas[i]=NULL;
 	}
-
+	os_InitTareaIdle();
 }
 
 /*************************************************************************************************
@@ -145,13 +162,13 @@ static void scheduler(void)  {
 	if (controlStrct_OS.estado_sistema == OS_RESET)  {
 		controlStrct_OS.tarea_actual = (tarea*) &tareaIdle;
 		controlStrct_OS.estado_sistema = OS_RUNNING;
-		IDE_tare = 1;
-		controlStrct_OS.tarea_siguiente = controlStrct_OS.array_tareas[IDE_tare];
+		Index_tareas = 1;
+		controlStrct_OS.tarea_siguiente = controlStrct_OS.array_tareas[Index_tareas];
 	}else{
 		controlStrct_OS.tarea_actual = controlStrct_OS.tarea_siguiente;
-		IDE_tare++;
-		if(IDE_tare>=controlStrct_OS.cant_tareas)IDE_tare=0;
-		controlStrct_OS.tarea_siguiente = controlStrct_OS.array_tareas[IDE_tare];
+		Index_tareas++;
+		if(Index_tareas>=controlStrct_OS.cant_tareas)Index_tareas=0;
+		controlStrct_OS.tarea_siguiente = controlStrct_OS.array_tareas[Index_tareas];
 	}
 
 

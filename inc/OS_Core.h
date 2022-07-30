@@ -55,9 +55,11 @@
 /************************************************************************************
  * 						Definiciones varias
  ***********************************************************************************/
-#define STACK_FRAME_SIZE	8
+#define STACK_FRAME_SIZE	17
 #define TASK_NAME_SIZE		8
 #define MAX_NUM_TASK		10
+#define p_TaskIdle 			0 /*Prioridad mínima de task idle*/
+#define id_TaskIdle 		0 /*ID de task idle*/
 
 /************************************************************************************
  * 						Definiciones del OS
@@ -88,7 +90,7 @@ struct _tarea{
  uint8_t 		prioridad;
  uint8_t 		id;
  uint32_t 		ticks_bloqueada;
- char 			nombre[TASK_NAME_SIZE];
+ char 			nombre[TASK_NAME_SIZE+1];
 };
 
 typedef struct _tarea tarea;
@@ -98,7 +100,7 @@ struct _osControl{
 	bool 		schedulerIRQ; 				//scheduling al volver de IRQ
 	tarea 		*tarea_actual;
 	tarea 		*tarea_siguiente;
-	tarea 		*array_tareas[MAX_NUM_TASK];
+	tarea 		*array_tareas[MAX_NUM_TASK+1];
 	int32_t 	error; 						//ultimo error ocurrido
 	estadoOS 	estado_sistema; 			//Estado actual del OS
 	uint8_t 	cant_tareas;
@@ -107,9 +109,9 @@ struct _osControl{
 typedef struct _osControl osControl;
 
 /*==================[definicion de prototipos]=================================*/
-
+void os_Idle_task(void);
 void os_InitTarea(tarea *tarea,void *entryPoint,uint8_t id_tarea, uint8_t prioridad_tarea,char *Nombre);
-void initTareaIdle(tarea* tareaToIdle);
+void os_InitTareaIdle(void);
 void os_SistemInit(tarea* array[MAX_NUM_TASK],uint8_t numOfTask);
 uint32_t getContextoSiguiente(uint32_t msp_ahora);
 void SysTick_Handler(void);

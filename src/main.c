@@ -15,7 +15,7 @@
 
 #define MILISEC		1000
 #define CANT_TAREAS 4
-uint8_t IDE_tare;
+uint8_t Index_tareas;
 /*==================[Global data declaration]==============================*/
 
 tarea tareaStruct1;		//estructura tarea de la tarea 1
@@ -90,9 +90,6 @@ int main(void)  {
 	}
 
 	os_SistemInit(Tareas,CANT_TAREAS);
-
-	initTareaIdle(&tareaStruct1);
-
 
 	while (1) {
 	}

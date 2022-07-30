@@ -36,18 +36,19 @@
 
 
 PendSV_Handler:
+	/*
 	tst lr,0x10 //bit 4 del EXEC_RETURN es cero?
 	it eq
 	vpusheq {s16-s31} //Si, PUSH de FPU regs
-	
+	*/
 	push {r4-r11,lr}
 	mrs r0,msp
 	bl getContextoSiguiente
 	msr msp,r0
 	pop {r4-r11,lr}
-
+/*
 	tst lr,0x10 //bit 4 del EXEC_RETURN es cero?
 	it eq
-	vpopeq {s16-s31} //Si, POP de FPU regs
-
+	vpopeq {s16-s31} //Si, POP de FPU reg
+*/
 	bx lr //retorno de PendSV

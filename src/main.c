@@ -47,6 +47,7 @@ void tarea1(void)  {
 	int i;
 	while (1) {
 		i++;
+		bloqued_Task(&tareaStruct1,10);
 	}
 }
 
@@ -54,6 +55,7 @@ void tarea2(void)  {
 	int j;
 	while (1) {
 		j++;
+		bloqued_Task(&tareaStruct2,10);
 	}
 }
 
@@ -61,6 +63,7 @@ void tarea3(void)  {
 	int k;
 	while (1) {
 		k++;
+		bloqued_Task(&tareaStruct3,10);
 	}
 }
 
@@ -68,6 +71,7 @@ void tarea4(void)  {
 	int l;
 	while (1) {
 		l++;
+		bloqued_Task(&tareaStruct4,10);
 	}
 }
 /*============================================================================*/
@@ -76,13 +80,13 @@ int main(void)  {
 
 	initHardware();
 
-	os_InitTarea(&tareaStruct1,tarea1,1,0,"tarea1");
+	os_InitTarea(&tareaStruct1,tarea1,1,1,"tarea1");
 	Tareas[0] = &tareaStruct1;
-	os_InitTarea(&tareaStruct2,tarea2,2,0,"tarea2");
+	os_InitTarea(&tareaStruct2,tarea2,2,1,"tarea2");
 	Tareas[1] = &tareaStruct2;
-	os_InitTarea(&tareaStruct3,tarea3,3,0,"tarea3");
+	os_InitTarea(&tareaStruct3,tarea3,3,1,"tarea3");
 	Tareas[2] = &tareaStruct3;
-	os_InitTarea(&tareaStruct4,tarea4,4,0,"tarea4");
+	os_InitTarea(&tareaStruct4,tarea4,4,1,"tarea4");
 	Tareas[3] = &tareaStruct4;
 
 	for(uint8_t i = CANT_TAREAS; i<MAX_NUM_TASK;i++){

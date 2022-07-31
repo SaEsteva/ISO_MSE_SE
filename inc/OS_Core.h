@@ -58,16 +58,22 @@
 #define STACK_FRAME_SIZE	17
 #define TASK_NAME_SIZE		8
 #define MAX_NUM_TASK		10
-#define p_TaskIdle 			0 /*Prioridad mínima de task idle*/
+#define p_TaskIdle 			1 /*Prioridad mï¿½nima de task idle*/
 #define id_TaskIdle 		0 /*ID de task idle*/
+#define first_index_Tasks 		id_TaskIdle+1 /*Index of the os taks*/
+
 
 /************************************************************************************
  * 						Definiciones del OS
  ***********************************************************************************/
+
+// Errores
+#define OS_ERR_N_TAREAS			1
+
 enum _estadoTarea{
 	TAREA_READY,
-	TAREA_RUNNING
-	//TAREA_BLOKED,
+	TAREA_RUNNING,
+	TAREA_BLOKED
 	//TAREA_SUSPENDED
 };
 
@@ -97,6 +103,7 @@ typedef struct _tarea tarea;
 
 /*==================[Estructura de control del OS]=================================*/
 struct _osControl{
+	bool 		next_task; 					//tarea siguiente, se debe cambiar de contexto
 	bool 		schedulerIRQ; 				//scheduling al volver de IRQ
 	tarea 		*tarea_actual;
 	tarea 		*tarea_siguiente;
@@ -104,18 +111,23 @@ struct _osControl{
 	int32_t 	error; 						//ultimo error ocurrido
 	estadoOS 	estado_sistema; 			//Estado actual del OS
 	uint8_t 	cant_tareas;
+	uint8_t 	index_tareas;
 };
 
 typedef struct _osControl osControl;
 
 /*==================[definicion de prototipos]=================================*/
-void os_Idle_task(void);
-void os_InitTarea(tarea *tarea,void *entryPoint,uint8_t id_tarea, uint8_t prioridad_tarea,char *Nombre);
-void os_InitTareaIdle(void);
-void os_SistemInit(tarea* array[MAX_NUM_TASK],uint8_t numOfTask);
-uint32_t getContextoSiguiente(uint32_t msp_ahora);
+__WEAK void errorHook(void);
+__WEAK void returnHook(void);
+__WEAK void os_Idle_task(void);
+void os_InitTarea(tarea *,void *,uint8_t , uint8_t ,char *);
+static void os_InitTareaIdle(void);
+void os_SistemInit(tarea* [MAX_NUM_TASK],uint8_t );
+uint32_t getContextoSiguiente(uint32_t );
 void SysTick_Handler(void);
 static void scheduler(void);
 static void setPendSV(void);
+void bloqued_Task(tarea *,uint32_t );
+void os_Error(int32_t);
 
 #endif /* ISO_I_2020_MSE_OS_INC_MSE_OS_CORE_H_ */

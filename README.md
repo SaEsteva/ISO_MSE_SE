@@ -2,13 +2,16 @@
 Sistema operativo desarrollado por Santiago Esteva como trabajo de la materia Implementacion de sistemas operativos 7ma Coherte 2022 de la Maestría en Sistemas Embebidos de la Facultad de Ingeniería, Universidad de Buenos Aires.
 
 # Sistema Operativo
-El sistema operativo permite crear una cantidad máxima de **MAX_NUM_TASK** tareas round robin con tras tipos de estado:
+El sistema operativo permite crear una cantidad máxima de **MAX_NUM_TASK** tareas que correran en modo round robin dependiendo los grupos de prioridad con tres tipos de estados:
 - TAREA_READY 
 - TAREA_RUNNING 
 - TAREA_BLOKED
 
 El controlar del SO se realiza en el Core mediante la estructura **osControl**. 
 
+## Prioridades
+Las tareas del SO pueden contar con **MAX_PRIOR_TASK** = 4 niveles de prioridades de las cuales van desde el valor mínimo de **p_TaskIdle** al máximo que es 4. El scheduler ejecutará desde mayor prioridad a menor prioridad con un esquema de round robin entre las tareas de la misma prioridad e irán disminuyendo de escalones  medida que las tareas de mayor prioridad pasan a estar bloqueadas.
+En caso de asignar una prioridad erronea, la tarea será asignada con la priodidad mínima.
 
 ## Ejecución del Sistema Operativo
 La ejecución del SO se implementa con interupciones del Systick. Realizando modificaciones en el Handler del systick se actualiza el estado del SO por cada tick, se llama al scheduler que define la nueva tarea a ejecutar y habilita la interrupcion del PendSV para el cambio de contexto
@@ -20,6 +23,7 @@ Para realizar el cambio de contexto se implementa una funcion en C (**getContext
 El SO operativo cuenta con los siguientes Hook:
 - returnHook: Tarea ejecutada luego de retornar una tarea del SO, en caso de no incorporar una loop infinito en las tareas creadas se finalizará en este hook a la espera de una nueva interrupcion del sistema.
 - errorHook: Tarea ejecutada cuando se pretende crear una cantidad de tareas mayor a **MAX_NUM_TASK**.
+- TickHook: Tarea ejecutrada por el Systick cuando se encuentra definido en 1 el **configUSE_TICK_HOOK**. Por default ejecutra un no operation "NOP".
 
 ## Tarea IDLE
 Cuando el SO no cuenta con tareas a ejecutar debido a:

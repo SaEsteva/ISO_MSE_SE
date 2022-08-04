@@ -22,6 +22,10 @@
 
 //----------------------------------------------------------------------------------
 
+/************************************************************************************
+ * 	Tick Hook 
+ ***********************************************************************************/
+#define configUSE_TICK_HOOK 0
 
 
 /************************************************************************************
@@ -58,9 +62,10 @@
 #define STACK_FRAME_SIZE	17
 #define TASK_NAME_SIZE		8
 #define MAX_NUM_TASK		10
-#define p_TaskIdle 			1 /*Prioridad m�nima de task idle*/
-#define id_TaskIdle 		0 /*ID de task idle*/
-#define first_index_Tasks 		id_TaskIdle+1 /*Index of the os taks*/
+#define MAX_PRIOR_TASK		4
+#define p_TaskIdle 			0 /*Prioridad m�nima de task idle*/
+#define id_TaskIdle 		MAX_NUM_TASK /*ID de task idle*/
+#define first_index_Tasks 		0 /*Index of the os taks*/
 
 
 /************************************************************************************
@@ -69,6 +74,21 @@
 
 // Errores
 #define OS_ERR_N_TAREAS			1
+
+// Posicion en el array de prioridades
+#define array_pos_p4			0
+#define array_pos_p3			1
+#define array_pos_p2			2
+#define array_pos_p1			3
+#define array_pos_pIdle			4
+
+// Prioridades
+#define Prioridad_1				1
+#define Prioridad_2				2
+#define Prioridad_3				3
+#define Prioridad_4				4
+
+typedef enum _prioridadTareas prioridadTareas;
 
 enum _estadoTarea{
 	TAREA_READY,
@@ -108,8 +128,10 @@ struct _osControl{
 	tarea 		*tarea_actual;
 	tarea 		*tarea_siguiente;
 	tarea 		*array_tareas[MAX_NUM_TASK+1];
+	uint8_t 	prioridad_tareas[MAX_PRIOR_TASK+1];// Array con tareas en cada prioridad ordenado de mayor prioridad a menor
 	int32_t 	error; 						//ultimo error ocurrido
 	estadoOS 	estado_sistema; 			//Estado actual del OS
+	uint8_t 	cant_prioridades[MAX_PRIOR_TASK];// Array con tareas en cada prioridad de mayor a menor
 	uint8_t 	cant_tareas;
 	uint8_t 	index_tareas;
 };
@@ -117,17 +139,20 @@ struct _osControl{
 typedef struct _osControl osControl;
 
 /*==================[definicion de prototipos]=================================*/
+__WEAK void TickHook(void);
 __WEAK void errorHook(void);
 __WEAK void returnHook(void);
 __WEAK void os_Idle_task(void);
 void os_InitTarea(tarea *,void *,uint8_t , uint8_t ,char *);
 static void os_InitTareaIdle(void);
-void os_SistemInit(tarea* [MAX_NUM_TASK],uint8_t );
+void os_SistemInit(void);
 uint32_t getContextoSiguiente(uint32_t );
 void SysTick_Handler(void);
 static void scheduler(void);
 static void setPendSV(void);
 void bloqued_Task(tarea *,uint32_t );
 void os_Error(int32_t);
+static void os_OrdenarPrioridades(void);
+static uint8_t os_ObtenerCantPrioridad(uint8_t ,uint8_t * );
 
 #endif /* ISO_I_2020_MSE_OS_INC_MSE_OS_CORE_H_ */

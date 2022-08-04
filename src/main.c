@@ -23,7 +23,6 @@ tarea tareaStruct2;		//estructura tarea de la tarea 2
 tarea tareaStruct3;		//estructura tarea de la tarea 3
 tarea tareaStruct4;		//estructura tarea de la tarea 4
 
-tarea* Tareas[MAX_NUM_TASK];
 /*==================[internal functions declaration]=========================*/
 
 /*==================[internal data definition]===============================*/
@@ -81,19 +80,13 @@ int main(void)  {
 	initHardware();
 
 	os_InitTarea(&tareaStruct1,tarea1,1,1,"tarea1");
-	Tareas[0] = &tareaStruct1;
 	os_InitTarea(&tareaStruct2,tarea2,2,1,"tarea2");
-	Tareas[1] = &tareaStruct2;
 	os_InitTarea(&tareaStruct3,tarea3,3,1,"tarea3");
-	Tareas[2] = &tareaStruct3;
 	os_InitTarea(&tareaStruct4,tarea4,4,1,"tarea4");
-	Tareas[3] = &tareaStruct4;
+	
 
-	for(uint8_t i = CANT_TAREAS; i<MAX_NUM_TASK;i++){
-		Tareas[i]=NULL;
-	}
+	os_SistemInit();
 
-	os_SistemInit(Tareas,CANT_TAREAS);
 
 	while (1) {
 	}

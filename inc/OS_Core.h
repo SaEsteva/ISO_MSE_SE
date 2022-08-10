@@ -63,9 +63,9 @@
 #define TASK_NAME_SIZE		8
 #define MAX_NUM_TASK		10
 #define MAX_PRIOR_TASK		4
-#define p_TaskIdle 			0 /*Prioridad m�nima de task idle*/
+#define p_TaskIdle 			0 /*Prioridad minima de task idle*/
 #define id_TaskIdle 		MAX_NUM_TASK /*ID de task idle*/
-#define first_index_Tasks 		0 /*Index of the os taks*/
+#define first_index_Tasks 	0 /*Index of the os taks*/
 
 
 /************************************************************************************
@@ -113,7 +113,7 @@ struct _tarea{
  uint32_t		stack_pointer;
  void 			*entry_point;
  estadoTarea 	estado;
- uint8_t 		prioridad;
+ int8_t 		prioridad;
  uint8_t 		id;
  uint32_t 		ticks_bloqueada;
  char 			nombre[TASK_NAME_SIZE+1];

@@ -123,15 +123,16 @@ typedef struct _tarea tarea;
 
 /*==================[Estructura de control del OS]=================================*/
 struct _osControl{
-	bool 		next_task; 					//tarea siguiente, se debe cambiar de contexto
-	bool 		schedulerIRQ; 				//scheduling al volver de IRQ
+	bool 		next_task; 								// flag tarea siguiente, se debe cambiar de contexto
+	bool 		schedulerIRQ; 							// flag scheduling al volver de IRQ
 	tarea 		*tarea_actual;
 	tarea 		*tarea_siguiente;
-	tarea 		*array_tareas[MAX_NUM_TASK+1];
-	uint8_t 	prioridad_tareas[MAX_PRIOR_TASK+1];// Array con tareas en cada prioridad ordenado de mayor prioridad a menor
-	int32_t 	error; 						//ultimo error ocurrido
-	estadoOS 	estado_sistema; 			//Estado actual del OS
-	uint8_t 	cant_prioridades[MAX_PRIOR_TASK];// Array con tareas en cada prioridad de mayor a menor
+	tarea 		*array_tareas[MAX_NUM_TASK+1];			// Arreglo con todas las tareas actuales
+	int32_t 	error; 									// ultimo error ocurrido
+	estadoOS 	estado_sistema; 						// Estado actual del OS
+	uint8_t 	prioridad_tareas[MAX_PRIOR_TASK+1];		// Array con tareas en cada prioridad ordenado de mayor prioridad a menor
+	uint8_t 	cant_tareas_activas[MAX_PRIOR_TASK+1];	// Array con la cantidad de tareas no bloqueadas en cada prioridad de mayor a menor
+	int8_t 		prioridad_actual;
 	uint8_t 	cant_tareas;
 	uint8_t 	index_tareas;
 };
@@ -153,6 +154,6 @@ static void setPendSV(void);
 void bloqued_Task(tarea *,uint32_t );
 void os_Error(int32_t);
 static void os_OrdenarPrioridades(void);
-static uint8_t os_ObtenerCantPrioridad(uint8_t ,uint8_t * );
+static uint8_t os_BuscarPosicion(uint8_t);
 
 #endif /* ISO_I_2020_MSE_OS_INC_MSE_OS_CORE_H_ */

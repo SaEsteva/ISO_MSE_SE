@@ -99,24 +99,29 @@ void os_InitTarea(tarea *tarea,void *entryPoint,uint8_t id_tarea, uint8_t priori
 		switch (prioridad_tarea)
 		{
 		case 4:
-			tarea->prioridad = p_TaskIdle+prioridad_tarea;		
+			tarea->prioridad = p_TaskIdle+prioridad_tarea;
 			controlStrct_OS.prioridad_tareas[array_pos_p4]++;
+			controlStrct_OS.cant_tareas_activas[array_pos_p4]++;
 			break;
 		case 3:
-			tarea->prioridad = p_TaskIdle+prioridad_tarea;		
+			tarea->prioridad = p_TaskIdle+prioridad_tarea;
 			controlStrct_OS.prioridad_tareas[array_pos_p3]++;
+			controlStrct_OS.cant_tareas_activas[array_pos_p3]++;
 			break;
 		case 2:
-			tarea->prioridad = p_TaskIdle+prioridad_tarea;		
+			tarea->prioridad = p_TaskIdle+prioridad_tarea;
 			controlStrct_OS.prioridad_tareas[array_pos_p2]++;
+			controlStrct_OS.cant_tareas_activas[array_pos_p2]++;
 			break;
 		case 1:
-			tarea->prioridad = p_TaskIdle+prioridad_tarea;		
+			tarea->prioridad = p_TaskIdle+prioridad_tarea;
 			controlStrct_OS.prioridad_tareas[array_pos_p1]++;
+			controlStrct_OS.cant_tareas_activas[array_pos_p1]++;
 			break;
 		default:
-			tarea->prioridad = p_TaskIdle;		
+			tarea->prioridad = p_TaskIdle;
 			controlStrct_OS.prioridad_tareas[array_pos_pIdle]++;
+			controlStrct_OS.cant_tareas_activas[array_pos_pIdle]++;
 			break;
 		}		
 		strcpy(tarea->nombre,Nombre);
@@ -228,7 +233,11 @@ uint32_t getContextoSiguiente(uint32_t msp_ahora)  {
 void SysTick_Handler(void)  {
 	
 	uint8_t index_tareas = 0;
+	uint8_t index_prioridad;
 	tarea * p_tarea;
+
+	index_tareas = 0;
+	index_prioridad = 0;
 
 	if (configUSE_TICK_HOOK) TickHook();
 
@@ -242,7 +251,12 @@ void SysTick_Handler(void)  {
 		if (p_tarea->estado == TAREA_BLOKED){
 			p_tarea->ticks_bloqueada--;
 			// Si la cantidad de ticks ya llega a 0, la tarea vuelve a estar en ready
-			if (p_tarea->ticks_bloqueada <= 0)p_tarea->estado = TAREA_READY;
+			if (p_tarea->ticks_bloqueada <= 0){
+				// Obtengo la posicion en el vector de prioridades donde se encuentra la tarea
+				index_prioridad = (Prioridad_4 - p_tarea->prioridad);
+				p_tarea->estado = TAREA_READY;
+				controlStrct_OS.cant_tareas_activas[index_prioridad]++;
+			}
 		}
 	}
 		
@@ -263,103 +277,83 @@ void SysTick_Handler(void)  {
 	 *  @return	None.
 ***************************************************************************************************/
 static void scheduler(void)  {
-	bool loop1,loop2;
+	bool loop1,prioridad_flag;
 	uint8_t index_task_array;
 	uint8_t index_actual_task;
 	uint8_t index_inicial_p_actual;
+	uint8_t index_prior;
 	uint8_t prioridad_actual;
-	uint8_t prioridad_tarea_actual;
 	uint8_t cant_misma_prioridad;
 	tarea * p_tarea;
+	estadoOS 	estado;
 
 	loop1 = 0;
+	prioridad_flag = 0;
 	/*
 	 * Si el estado del sistema se encuentra en RESET, El scheduler carga como primea tarea a la tareaIdle, 
 	 * reinicia el contador de tareas y coloca como tarea siguiente a la primea del vector. 
 	 */
-	if (controlStrct_OS.estado_sistema == OS_RESET)  {
+	switch (controlStrct_OS.estado_sistema)
+	{
+	case OS_RESET:
 		controlStrct_OS.tarea_actual = (tarea*) &tareaIdle;
 		controlStrct_OS.estado_sistema = OS_RUNNING;
 		controlStrct_OS.index_tareas = first_index_Tasks;
 		controlStrct_OS.tarea_siguiente = controlStrct_OS.array_tareas[controlStrct_OS.index_tareas];
-		//controlStrct_OS.tarea_actual->prioridad = tareaIdle.prioridad;
-	}else if(controlStrct_OS.estado_sistema == OS_RUNNING)  {
+		controlStrct_OS.prioridad_actual = p_TaskIdle;
+		break;
+	
+	case OS_RUNNING:
 		/*
 		 * Si el estado del sistema se encuentra en RUNNING, el scheduler debe realizar el cambio hacia la tarea siguiente
 		 * ubicada en el array de tareas. Para esto se debe tener en cuenta el arreglo de prioridades. Por esto se analiza 
 		 * de mas prioridad a menos priodidad.
 		*/
-		prioridad_actual = Prioridad_4;
-		cant_misma_prioridad = os_ObtenerCantPrioridad(prioridad_actual,&index_inicial_p_actual);
+		index_prior = array_pos_p4;
 		index_actual_task = controlStrct_OS.index_tareas;
-	 	while(!loop1){
-			if(cant_misma_prioridad>=1){
-				/*
-				 * Existen tareas con misma prioridad, hay que analizar si la prioridad de la tarea actual es esta
-				*/
-				prioridad_tarea_actual = controlStrct_OS.tarea_actual->prioridad;
-				if (prioridad_tarea_actual == prioridad_actual){
-					loop2=0;
-					while(!loop2){
-						index_task_array=index_inicial_p_actual+(index_actual_task+1)%cant_misma_prioridad;
-						p_tarea = controlStrct_OS.array_tareas[index_task_array];
-						if (p_tarea->estado == TAREA_BLOKED){
-							// Si la tarea esta bloqueada debo pasar a la otra
-							index_inicial_p_actual = (index_inicial_p_actual+1)%cant_misma_prioridad;
-							// Si el index siguiente da 0, significa que no hay mas tareas de esta prioridad y debo disminuir y salir de este loop
-							if (index_inicial_p_actual == 0){
-								prioridad_actual--;
-								cant_misma_prioridad = os_ObtenerCantPrioridad(prioridad_actual,&index_inicial_p_actual);
-								loop2 = 1;
-							}
-						}else{
-							// La tarea no esta bloqueada asi que la asigno y sigo
-							controlStrct_OS.index_tareas = index_task_array;
-							controlStrct_OS.tarea_siguiente = controlStrct_OS.array_tareas[controlStrct_OS.index_tareas];
-							// Si la tarea siguiente es igual a la actual, no es necesario en cambio de contexto
-							if(index_task_array == index_actual_task)controlStrct_OS.next_task = false;
-							loop2 = loop1 = 1;
-						}
-					}
+		prioridad_actual = Prioridad_4 - index_prior;
+		index_inicial_p_actual = os_BuscarPosicion(prioridad_actual);
+		while(!loop1){
+			cant_misma_prioridad = controlStrct_OS.prioridad_tareas[index_prior];
+			if(controlStrct_OS.cant_tareas_activas[index_prior] > 0){
+				if (prioridad_actual == controlStrct_OS.prioridad_actual){
+					index_task_array=index_inicial_p_actual+(index_actual_task+1)%cant_misma_prioridad;
 				}else{
-					// Como no la tarea actual no es de esta prioridad, recorro el loop normal
-					loop2=0;
-					while(!loop2){
-						p_tarea = controlStrct_OS.array_tareas[index_inicial_p_actual];
-						if (p_tarea->estado == TAREA_BLOKED){
-							// Si la tarea esta bloqueada debo pasar a la otra
-							index_inicial_p_actual = (index_inicial_p_actual+1)%cant_misma_prioridad;
-							// Si el index siguiente da 0, significa que no hay mas tareas de esta prioridad y debo disminuir y salir de este loop
-							if (index_inicial_p_actual == 0){
-								prioridad_actual--;
-								cant_misma_prioridad = os_ObtenerCantPrioridad(prioridad_actual,&index_inicial_p_actual);
-								loop2 = 1;
-							}
-						}else{
-							controlStrct_OS.index_tareas = index_inicial_p_actual;
-							controlStrct_OS.tarea_siguiente = controlStrct_OS.array_tareas[controlStrct_OS.index_tareas];
-							controlStrct_OS.next_task = true;
-							loop2 = loop1 = 1;
-						}
-					}
-				}					
+					index_task_array=index_inicial_p_actual;
+				}
+				//Una vez que tengo el index de la posible tarea siguiente, veo si no esta bloqueada. Si lo esta, debo aumentar un index
+				//y ver la siguiente
+				p_tarea = controlStrct_OS.array_tareas[index_task_array];
+				if (p_tarea->estado == TAREA_BLOKED){
+					index_inicial_p_actual = (index_task_array+1)%cant_misma_prioridad;
+					prioridad_flag = 1;
+				}else{
+					controlStrct_OS.index_tareas = index_task_array;
+					controlStrct_OS.tarea_siguiente = controlStrct_OS.array_tareas[controlStrct_OS.index_tareas];
+					controlStrct_OS.prioridad_actual = prioridad_actual;
+					if(controlStrct_OS.index_tareas == index_actual_task)controlStrct_OS.next_task = false;
+					loop1 = 1;
+				}
 			}else{
-				//No hay tareas con esta prioridad, debo bajar a la siguiente y volver al ciclo.
-				prioridad_actual--;
-				cant_misma_prioridad = os_ObtenerCantPrioridad(prioridad_actual,&index_inicial_p_actual);
-				if (prioridad_actual < p_TaskIdle){
+				index_prior++;
+				if (MAX_PRIOR_TASK < index_prior){
 					// Ninguna tarea se encuentra en estado para ser ejecutada, se debe ejecutar la tarea Idle
-					
 					controlStrct_OS.index_tareas = id_TaskIdle;
 					controlStrct_OS.tarea_siguiente = (tarea*) &tareaIdle;
-					controlStrct_OS.tarea_actual->prioridad = tareaIdle.prioridad;
-					controlStrct_OS.next_task = true;
+					controlStrct_OS.prioridad_actual = p_TaskIdle;
 					loop1 = 1;
-		
 				}
 			}
+			prioridad_actual = Prioridad_4 - index_prior;
+			if(!prioridad_flag)index_inicial_p_actual = os_BuscarPosicion(prioridad_actual);
 		}
+		break;
+
+	default:
+		controlStrct_OS.estado_sistema = OS_RESET;
+		break;
 	}
+
 	if(controlStrct_OS.next_task)setPendSV();
 }
 
@@ -407,8 +401,14 @@ static void setPendSV(void)  {
 ***************************************************************************************************/
 void bloqued_Task(tarea *tarea,uint32_t n_tick)  {
 
+	uint8_t index_prioridad = 0; // posicion de la tarea en el vector de prioridades
 	tarea->estado = TAREA_BLOKED;
-	tarea->ticks_bloqueada = n_tick;	
+	tarea->ticks_bloqueada = n_tick;
+	index_prioridad = (Prioridad_4-tarea->prioridad);
+	// Saco la tarea del vector de activas, la posicion en el vector depende de su prioridad
+	controlStrct_OS.cant_tareas_activas[index_prioridad]--;
+	// La tarea se bloque por lo tanto se esperará hasta una futura interupcion del Scheduler
+	__WFI();
 }
 
 /*************************************************************************************************
@@ -474,17 +474,18 @@ static void os_OrdenarPrioridades(void)  {
 	}
 }
 
+
 /*************************************************************************************************
-	 *  @brief Buscar la cantidad de tareas que hay con una priridad
+	 *  @brief Buscar la posicion en el vector de tareas con es prioridad
      *
      *  @details
-     *   Buscar en el vector de control la cantidad de tareas que hay con una priridad determinada
+     *   Buscar la posicion en el vector de tareas del OS la posicion en la cual se encuentran las tareas que tienen
+     *   la prioridad recibida como parï¿½metro
      *
 	 *  @param 		prioridad: la prioridad a buscar
-	 * 	@param 		*posicion_inicial_vector: puntero a variable donde se guardarÃ¡ la posicion en el vector de tareas donde incia la prioridad actual
-	 *  @return     la cantidad de tareas con esa prioridad
+	 *  @return     posicion en el vector de tareas donde incia la prioridad actual
 ***************************************************************************************************/
-static uint8_t os_ObtenerCantPrioridad(uint8_t prioridad,uint8_t * posicion_inicial_vector) {
+static uint8_t os_BuscarPosicion(uint8_t prioridad) {
 	uint8_t cant4 = controlStrct_OS.prioridad_tareas[array_pos_p4];
 	uint8_t cant3 = controlStrct_OS.prioridad_tareas[array_pos_p3];
 	uint8_t cant2 = controlStrct_OS.prioridad_tareas[array_pos_p2];
@@ -493,24 +494,19 @@ static uint8_t os_ObtenerCantPrioridad(uint8_t prioridad,uint8_t * posicion_inic
 	switch (prioridad)
 	{
 	case Prioridad_4:
-		*posicion_inicial_vector = array_pos_p4;
-		return cant4;
+		return array_pos_p4;
 		break;
 	case Prioridad_3:
-		*posicion_inicial_vector = array_pos_p4 + cant4;
-		return cant3;
+		return array_pos_p4 + cant4;
 		break;
 	case Prioridad_2:
-		*posicion_inicial_vector = cant4 + cant3;
-		return cant2;
+		return cant4 + cant3;
 		break;
 	case Prioridad_1:
-		*posicion_inicial_vector = cant4 + cant3 + cant2;
-		return cant1;
+		return cant4 + cant3 + cant2;
 		break;
 	default:
-		*posicion_inicial_vector = cant0;
-		return 0;
+		return cant0;
 		break;
 	}
 }

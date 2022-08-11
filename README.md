@@ -10,8 +10,9 @@ El sistema operativo permite crear una cantidad máxima de **MAX_NUM_TASK** tare
 El controlar del SO se realiza en el Core mediante la estructura **osControl**. 
 
 ## Prioridades
-Las tareas del SO pueden contar con **MAX_PRIOR_TASK** = 4 niveles de prioridades de las cuales van desde el valor mínimo de **p_TaskIdle** al máximo que es 4. El scheduler ejecutará desde mayor prioridad a menor prioridad con un esquema de round robin entre las tareas de la misma prioridad e irán disminuyendo de escalones  medida que las tareas de mayor prioridad pasan a estar bloqueadas.
-En caso de asignar una prioridad erronea, la tarea será asignada con la priodidad mínima.
+Las tareas del SO pueden contar con **MAX_PRIOR_TASK** = 4 niveles de prioridades de las cuales van desde el valor mínimo de **p_TaskIdle** al máximo que es 4. El scheduler ejecutará desde mayor prioridad a menor prioridad con un esquema de round robin entre las tareas de la misma prioridad e irán disminuyendo de escalones a medida que las tareas de mayor prioridad pasan a estar bloqueadas.
+
+**NOTA: En caso de asignar una prioridad erronea, la tarea será asignada con la priodidad mínima.**
 
 ## Ejecución del Sistema Operativo
 La ejecución del SO se implementa con interupciones del Systick. Realizando modificaciones en el Handler del systick se actualiza el estado del SO por cada tick, se llama al scheduler que define la nueva tarea a ejecutar y habilita la interrupcion del PendSV para el cambio de contexto
@@ -34,4 +35,4 @@ El SO cuenta con la tarea IDLE que se ejecutaría en estos casos, dando un uso d
 Puede ser redefinida para efectuar acciones de segundo plano (background) o definir perfiles de ejecución para aplicar técnicas de bajo consumo (frecuencia CPU, periféricos, etc). Por default la trea ejecuta la instrucción WFI (wait for interrupt).
 
 ## Tarea BLOCKED
-Actualmente para pasar una tarea a bloqueado se implementa la funcion **bloqued_Task** que recibe como puntero la estructura de la tarea y la cantidad de ticks que se pretende bloquear la tarea. Actualiza el estado y almacena el número de ticks recibidos.
+Actualmente para pasar una tarea a bloqueado se implementa la funcion **bloqued_Task** que recibe como puntero la estructura de la tarea y la cantidad de ticks que se pretende bloquear la tarea. Actualiza el estado, almacena el número de ticks recibidos y se queda en espera a una nueva interrupcion con __WFI()

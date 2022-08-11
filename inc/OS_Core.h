@@ -151,9 +151,12 @@ uint32_t getContextoSiguiente(uint32_t );
 void SysTick_Handler(void);
 static void scheduler(void);
 static void setPendSV(void);
-void bloqued_Task(tarea *,uint32_t );
+void os_blockedTask(tarea *,uint32_t );
+void os_releaseTask(tarea *);
 void os_Error(int32_t);
 static void os_OrdenarPrioridades(void);
 static uint8_t os_BuscarPosicion(uint8_t);
+tarea* os_ActualTask(void);
+void os_Scheduling(void);
 
 #endif /* ISO_I_2020_MSE_OS_INC_MSE_OS_CORE_H_ */

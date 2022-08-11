@@ -10,6 +10,7 @@
 #include "main.h"
 #include "board.h"
 #include "OS_Core.h"
+#include "OS_API.h"
 
 /*==================[macros and definitions]=================================*/
 
@@ -26,6 +27,8 @@ tarea tareaStruct5;		//estructura tarea de la tarea 5
 tarea tareaStruct6;		//estructura tarea de la tarea 6
 tarea tareaStruct7;		//estructura tarea de la tarea 7
 tarea tareaStruct8;		//estructura tarea de la tarea 8
+
+semaforo semaforo_binario;
 
 /*==================[internal functions declaration]=========================*/
 
@@ -50,7 +53,7 @@ void tarea1(void)  {
 	int i;
 	while (1) {
 		i++;
-		bloqued_Task(&tareaStruct1,10);
+		Delay(10);
 	}
 }
 
@@ -58,7 +61,7 @@ void tarea2(void)  {
 	int j;
 	while (1) {
 		j++;
-		bloqued_Task(&tareaStruct2,20);
+		Delay(20);
 	}
 }
 
@@ -66,7 +69,7 @@ void tarea3(void)  {
 	int k;
 	while (1) {
 		k++;
-		bloqued_Task(&tareaStruct3,10);
+		Delay(10);
 	}
 }
 
@@ -74,7 +77,7 @@ void tarea4(void)  {
 	int l;
 	while (1) {
 		l++;
-		bloqued_Task(&tareaStruct4,20);
+		Delay(20);
 	}
 }
 
@@ -82,28 +85,26 @@ void tarea5(void)  {
 	int l;
 	while (1) {
 		l++;
-		//bloqued_Task(&tareaStruct4,10);
+		Take_Semaforo(&semaforo_binario);
 	}
 }
 void tarea6(void)  {
 	int l;
 	while (1) {
 		l++;
-		//bloqued_Task(&tareaStruct4,10);
 	}
 }
 void tarea7(void)  {
 	int l;
 	while (1) {
 		l++;
-		//bloqued_Task(&tareaStruct4,10);
 	}
 }
 void tarea8(void)  {
 	int l;
 	while (1) {
 		l++;
-		//bloqued_Task(&tareaStruct4,10);
+		Give_Semaforo(&semaforo_binario);
 	}
 }
 /*============================================================================*/
@@ -121,6 +122,7 @@ int main(void)  {
 	os_InitTarea(&tareaStruct4,tarea4,4,3,"tarea4");
 	os_InitTarea(&tareaStruct8,tarea8,8,1,"tarea8");
 	
+	Init_Semaforo(&semaforo_binario);
 
 	os_SistemInit();
 

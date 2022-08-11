@@ -252,10 +252,7 @@ void SysTick_Handler(void)  {
 			p_tarea->ticks_bloqueada--;
 			// Si la cantidad de ticks ya llega a 0, la tarea vuelve a estar en ready
 			if (p_tarea->ticks_bloqueada <= 0){
-				// Obtengo la posicion en el vector de prioridades donde se encuentra la tarea
-				index_prioridad = (Prioridad_4 - p_tarea->prioridad);
-				p_tarea->estado = TAREA_READY;
-				controlStrct_OS.cant_tareas_activas[index_prioridad]++;
+				os_releaseTask(p_tarea);
 			}
 		}
 	}
@@ -277,7 +274,7 @@ void SysTick_Handler(void)  {
 	 *  @return	None.
 ***************************************************************************************************/
 static void scheduler(void)  {
-	bool loop1,prioridad_flag;
+	bool loop,prioridad_flag;
 	uint8_t index_task_array;
 	uint8_t index_actual_task;
 	uint8_t index_inicial_p_actual;
@@ -287,7 +284,7 @@ static void scheduler(void)  {
 	tarea * p_tarea;
 	estadoOS 	estado;
 
-	loop1 = 0;
+	loop = 0;
 	prioridad_flag = 0;
 	/*
 	 * Si el estado del sistema se encuentra en RESET, El scheduler carga como primea tarea a la tareaIdle, 
@@ -313,7 +310,7 @@ static void scheduler(void)  {
 		index_actual_task = controlStrct_OS.index_tareas;
 		prioridad_actual = Prioridad_4 - index_prior;
 		index_inicial_p_actual = os_BuscarPosicion(prioridad_actual);
-		while(!loop1){
+		while(!loop){
 			cant_misma_prioridad = controlStrct_OS.prioridad_tareas[index_prior];
 			if(controlStrct_OS.cant_tareas_activas[index_prior] > 0){
 				if (prioridad_actual == controlStrct_OS.prioridad_actual){
@@ -325,14 +322,20 @@ static void scheduler(void)  {
 				//y ver la siguiente
 				p_tarea = controlStrct_OS.array_tareas[index_task_array];
 				if (p_tarea->estado == TAREA_BLOKED){
-					index_inicial_p_actual = (index_task_array+1)%cant_misma_prioridad;
+					/*
+					 * Esta parte se debe consultar en caso de que una tarea de mayor prioridad se pone el ready y por lo tanto el index inicial
+					 * se utiliza como "buscador" de esta tarea ya que el flag prioridad_flag se encuentra activado.
+					 *
+					 */
+					if(!prioridad_flag)index_inicial_p_actual = index_inicial_p_actual+(index_task_array+1)%cant_misma_prioridad;
+					else index_inicial_p_actual = (index_task_array+1)%cant_misma_prioridad;
 					prioridad_flag = 1;
 				}else{
 					controlStrct_OS.index_tareas = index_task_array;
 					controlStrct_OS.tarea_siguiente = controlStrct_OS.array_tareas[controlStrct_OS.index_tareas];
 					controlStrct_OS.prioridad_actual = prioridad_actual;
 					if(controlStrct_OS.index_tareas == index_actual_task)controlStrct_OS.next_task = false;
-					loop1 = 1;
+					loop = 1;
 				}
 			}else{
 				index_prior++;
@@ -341,7 +344,7 @@ static void scheduler(void)  {
 					controlStrct_OS.index_tareas = id_TaskIdle;
 					controlStrct_OS.tarea_siguiente = (tarea*) &tareaIdle;
 					controlStrct_OS.prioridad_actual = p_TaskIdle;
-					loop1 = 1;
+					loop = 1;
 				}
 			}
 			prioridad_actual = Prioridad_4 - index_prior;
@@ -399,7 +402,7 @@ static void setPendSV(void)  {
 	 *  @param 		n_tick	cantidad de ticks a permanecer bloqueada
 	 *  @return     None
 ***************************************************************************************************/
-void bloqued_Task(tarea *tarea,uint32_t n_tick)  {
+void os_blockedTask(tarea *tarea,uint32_t n_tick)  {
 
 	uint8_t index_prioridad = 0; // posicion de la tarea en el vector de prioridades
 	tarea->estado = TAREA_BLOKED;
@@ -407,10 +410,26 @@ void bloqued_Task(tarea *tarea,uint32_t n_tick)  {
 	index_prioridad = (Prioridad_4-tarea->prioridad);
 	// Saco la tarea del vector de activas, la posicion en el vector depende de su prioridad
 	controlStrct_OS.cant_tareas_activas[index_prioridad]--;
-	// La tarea se bloque por lo tanto se esperará hasta una futura interupcion del Scheduler
+	// La tarea se bloque por lo tanto se esperarï¿½ hasta una futura interupcion del Scheduler
 	__WFI();
 }
 
+/*************************************************************************************************
+	 *  @brief Pone en estado ready una tarea.
+     *
+     *  @details
+     *   Pone en estado ready una tarea que estaba bloqueada
+     *
+	 *  @param 		*tarea	Puntero a la estructura de la tarea.
+	 *  @return     None
+***************************************************************************************************/
+void os_releaseTask(tarea *tarea)  {
+	uint8_t index_prioridad = 0;
+	tarea->estado = TAREA_READY;
+	tarea->ticks_bloqueada = 0;
+	index_prioridad = (Prioridad_4-tarea->prioridad);
+	controlStrct_OS.cant_tareas_activas[index_prioridad]++;
+}
 /*************************************************************************************************
 	 *  @brief Actualiza la estrucutra con el error y ejecutra el hook
      *
@@ -509,4 +528,31 @@ static uint8_t os_BuscarPosicion(uint8_t prioridad) {
 		return cant0;
 		break;
 	}
+}
+
+/*************************************************************************************************
+	 *  @brief Indicar cual es la tarea actual
+     *
+     *  @details
+     *   Indica cual es la tarea que se encuentra corriendo actualmente en el OS, permite a las tareas 
+	 * de la API conocer el estado del OS.
+     *
+	 *  @param 		None
+	 *  @return     Direccion de memoria de la tarea actual
+***************************************************************************************************/
+tarea* os_ActualTask(){
+	return controlStrct_OS.tarea_actual;
+}
+
+/*************************************************************************************************
+	 *  @brief Fuerza un scheduling del OS
+     *
+     *  @details
+     *   Llama a la funcion de scheduler para generar un scheduling forzado del OS
+     *
+	 *  @param 		None
+	 *  @return     None
+***************************************************************************************************/
+void os_Scheduling(){
+	scheduler();
 }

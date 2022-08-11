@@ -5,7 +5,7 @@ Sistema operativo desarrollado por Santiago Esteva como trabajo de la materia Im
 El sistema operativo permite crear una cantidad máxima de **MAX_NUM_TASK** tareas que correran en modo round robin dependiendo los grupos de prioridad con tres tipos de estados:
 - TAREA_READY 
 - TAREA_RUNNING 
-- TAREA_BLOKED
+- TAREA_BLOCKED
 
 El controlar del SO se realiza en el Core mediante la estructura **osControl**. 
 
@@ -35,4 +35,25 @@ El SO cuenta con la tarea IDLE que se ejecutaría en estos casos, dando un uso d
 Puede ser redefinida para efectuar acciones de segundo plano (background) o definir perfiles de ejecución para aplicar técnicas de bajo consumo (frecuencia CPU, periféricos, etc). Por default la trea ejecuta la instrucción WFI (wait for interrupt).
 
 ## Tarea BLOCKED
-Actualmente para pasar una tarea a bloqueado se implementa la funcion **bloqued_Task** que recibe como puntero la estructura de la tarea y la cantidad de ticks que se pretende bloquear la tarea. Actualiza el estado, almacena el número de ticks recibidos y se queda en espera a una nueva interrupcion con __WFI()
+Para pasar una tarea a bloqueado se implementa la funcion **os_blockedTask** que recibe como puntero la estructura de la tarea y la cantidad de ticks que se pretende bloquear la tarea. Actualiza el estado, almacena el número de ticks recibidos y se queda en espera a una nueva interrupcion con __WFI()
+
+## Tarea RELEASE
+Para liberar una tarea del estado bloqueado se implementa la funcion **os_releaseTask** que recibe como puntero la estructura de la tarea que se pretende liberar. Actualiza el estado, resetea el número de ticks recibidos.
+
+# API
+Se dearrolla la biblioteca de apis con las funcionalidades que se presentan en esta seccion.
+## Delay
+Genera un delay durante una cantidad de ticks de sistema indicado como parámetro de la funcion sobre la tarea que la invoca, el estado de la tarea durante este tiempo es **TAREA_BLOCKED**
+
+Hace uso de la funcion **os_blockedTask** del core.
+
+## Semaforo
+Se implementa un semáforo binario con la posiblidad de ser tomado y liberado utilizando las respectivas funciones, en caso de que el semaforo se encuentre tomado durante el llamado a la funcion **Take_Semaforo**, la tarea pasará al estado **TAREA_BLOCKED** hasta que el semáforo sea liberado. En caso de que nunca sea liberado el semáforo, por el momento la tareá volverá al estado READY luego de **4294967295** ticks de sistema (0xFFFFFFFF, valor máximo de la variable uint32_t ticks_bloqueada de la estructura de la tarea), en futuras versiones se tomará una medida mas adecuada.
+
+La funcion que libera el semáforo **Give_Semaforo** libera la tarea (usando **os_releaseTask**) , actualiza el estado del semáforo y llama a la api **CpuYield**
+
+## Forzado de Scheduling
+Fuerza un llamado al scheduler del OS por parte de la API. La funcion correspondiente es **CpuYield**
+
+## Colas
+Futuros desarrollos

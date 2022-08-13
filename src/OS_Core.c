@@ -74,12 +74,12 @@ __WEAK void os_Idle_task(void)  {
      *   Es necesario llamar a esta funcion para cada tarea antes que inicie
      *   el OS.
      *
-	 *  @param *tarea			Puntero a la estructura de la tarea.
-	 *  @param entryPoint			Puntero a la tarea.
-	 *  @param id_tarea			N�mero de identificaci�n de la tarea.
-	 *  @param prioridad_tarea  Prioridad de la tarea.
-	 *  @param Nombre			Puntero al nombre de la tarea.
-	 *  @return     None.
+	 *  @param 	*tarea			Puntero a la estructura de la tarea.
+	 *  @param 	entryPoint			Puntero a la tarea.
+	 *  @param 	id_tarea			N�mero de identificaci�n de la tarea.
+	 *  @param 	prioridad_tarea  Prioridad de la tarea.
+	 *  @param 	Nombre			Puntero al nombre de la tarea.
+	 *  @return	None.
 ***************************************************************************************************/
 void os_InitTarea(tarea *tarea,void *entryPoint,uint8_t id_tarea, uint8_t prioridad_tarea,char *Nombre)  {
 
@@ -95,33 +95,33 @@ void os_InitTarea(tarea *tarea,void *entryPoint,uint8_t id_tarea, uint8_t priori
 
 		tarea->entry_point = entryPoint;
 		tarea->id = id_tarea;
-		// La prioridad debe estar entre 0 y MAX_PRIOR_TASK, en caso de quedar fuera de eso se asigna la menor (p_TaskIdle)
+		// La prioridad debe estar entre 0 y MAX_PRIOR_TASK, en caso de quedar fuera de eso se asigna la menor (P_TASKIDLE)
 		switch (prioridad_tarea)
 		{
 		case 4:
-			tarea->prioridad = p_TaskIdle+prioridad_tarea;
-			controlStrct_OS.prioridad_tareas[array_pos_p4]++;
-			controlStrct_OS.cant_tareas_activas[array_pos_p4]++;
+			tarea->prioridad = P_TASKIDLE+prioridad_tarea;
+			controlStrct_OS.prioridad_tareas[ARRAY_POS_P4]++;
+			controlStrct_OS.cant_tareas_activas[ARRAY_POS_P4]++;
 			break;
 		case 3:
-			tarea->prioridad = p_TaskIdle+prioridad_tarea;
-			controlStrct_OS.prioridad_tareas[array_pos_p3]++;
-			controlStrct_OS.cant_tareas_activas[array_pos_p3]++;
+			tarea->prioridad = P_TASKIDLE+prioridad_tarea;
+			controlStrct_OS.prioridad_tareas[ARRAY_POS_P3]++;
+			controlStrct_OS.cant_tareas_activas[ARRAY_POS_P3]++;
 			break;
 		case 2:
-			tarea->prioridad = p_TaskIdle+prioridad_tarea;
-			controlStrct_OS.prioridad_tareas[array_pos_p2]++;
-			controlStrct_OS.cant_tareas_activas[array_pos_p2]++;
+			tarea->prioridad = P_TASKIDLE+prioridad_tarea;
+			controlStrct_OS.prioridad_tareas[ARRAY_POS_P2]++;
+			controlStrct_OS.cant_tareas_activas[ARRAY_POS_P2]++;
 			break;
 		case 1:
-			tarea->prioridad = p_TaskIdle+prioridad_tarea;
-			controlStrct_OS.prioridad_tareas[array_pos_p1]++;
-			controlStrct_OS.cant_tareas_activas[array_pos_p1]++;
+			tarea->prioridad = P_TASKIDLE+prioridad_tarea;
+			controlStrct_OS.prioridad_tareas[ARRAY_POS_P1]++;
+			controlStrct_OS.cant_tareas_activas[ARRAY_POS_P1]++;
 			break;
 		default:
-			tarea->prioridad = p_TaskIdle;
-			controlStrct_OS.prioridad_tareas[array_pos_pIdle]++;
-			controlStrct_OS.cant_tareas_activas[array_pos_pIdle]++;
+			tarea->prioridad = P_TASKIDLE;
+			controlStrct_OS.prioridad_tareas[ARRAY_POS_PIDLE]++;
+			controlStrct_OS.cant_tareas_activas[ARRAY_POS_PIDLE]++;
 			break;
 		}		
 		strcpy(tarea->nombre,Nombre);
@@ -157,8 +157,8 @@ static void os_InitTareaIdle(void){
 	tareaIdle.stack_pointer = (uint32_t) (tareaIdle.stack + STACK_SIZE/4 - STACK_FRAME_SIZE);
 
 	tareaIdle.entry_point = os_Idle_task;
-	tareaIdle.id = id_TaskIdle;
-	tareaIdle.prioridad = p_TaskIdle-1;
+	tareaIdle.id = ID_TASKIDLE;
+	tareaIdle.prioridad = P_TASKIDLE-1;
 	strcpy(tareaIdle.nombre,"IdleTask");
 	tareaIdle.estado = TAREA_READY;
 }
@@ -180,8 +180,8 @@ void os_SistemInit()  {
 	controlStrct_OS.tarea_siguiente = NULL;
 	controlStrct_OS.error = 0;
 	controlStrct_OS.estado_sistema = OS_RESET;
-	controlStrct_OS.array_tareas[id_TaskIdle]=&tareaIdle;
-	controlStrct_OS.index_tareas=first_index_Tasks;
+	controlStrct_OS.array_tareas[ID_TASKIDLE]=&tareaIdle;
+	controlStrct_OS.index_tareas=FIRST_INDEX_TASKS;
 	os_InitTareaIdle();
 	os_OrdenarPrioridades();
 }
@@ -246,7 +246,7 @@ void SysTick_Handler(void)  {
 	/*
 	 * En caso de contar con tareas bloqueadas, dado que paso un tick de sistema de debería decrementar el contador
 	 */
-	for(index_tareas=first_index_Tasks;index_tareas<controlStrct_OS.cant_tareas;index_tareas++){
+	for(index_tareas=FIRST_INDEX_TASKS;index_tareas<controlStrct_OS.cant_tareas;index_tareas++){
 		p_tarea = controlStrct_OS.array_tareas[index_tareas];
 		if (p_tarea->estado == TAREA_BLOKED){
 			p_tarea->ticks_bloqueada--;
@@ -295,9 +295,9 @@ static void scheduler(void)  {
 	case OS_RESET:
 		controlStrct_OS.tarea_actual = (tarea*) &tareaIdle;
 		controlStrct_OS.estado_sistema = OS_RUNNING;
-		controlStrct_OS.index_tareas = first_index_Tasks;
+		controlStrct_OS.index_tareas = FIRST_INDEX_TASKS;
 		controlStrct_OS.tarea_siguiente = controlStrct_OS.array_tareas[controlStrct_OS.index_tareas];
-		controlStrct_OS.prioridad_actual = p_TaskIdle;
+		controlStrct_OS.prioridad_actual = P_TASKIDLE;
 		break;
 	
 	case OS_RUNNING:
@@ -306,9 +306,9 @@ static void scheduler(void)  {
 		 * ubicada en el array de tareas. Para esto se debe tener en cuenta el arreglo de prioridades. Por esto se analiza 
 		 * de mas prioridad a menos priodidad.
 		*/
-		index_prior = array_pos_p4;
+		index_prior = ARRAY_POS_P4;
 		index_actual_task = controlStrct_OS.index_tareas;
-		prioridad_actual = Prioridad_4 - index_prior;
+		prioridad_actual = PRIORIDAD_4 - index_prior;
 		index_inicial_p_actual = os_BuscarPosicion(prioridad_actual);
 		while(!loop){
 			cant_misma_prioridad = controlStrct_OS.prioridad_tareas[index_prior];
@@ -341,13 +341,13 @@ static void scheduler(void)  {
 				index_prior++;
 				if (MAX_PRIOR_TASK < index_prior){
 					// Ninguna tarea se encuentra en estado para ser ejecutada, se debe ejecutar la tarea Idle
-					controlStrct_OS.index_tareas = id_TaskIdle;
+					controlStrct_OS.index_tareas = ID_TASKIDLE;
 					controlStrct_OS.tarea_siguiente = (tarea*) &tareaIdle;
-					controlStrct_OS.prioridad_actual = p_TaskIdle;
+					controlStrct_OS.prioridad_actual = P_TASKIDLE;
 					loop = 1;
 				}
 			}
-			prioridad_actual = Prioridad_4 - index_prior;
+			prioridad_actual = PRIORIDAD_4 - index_prior;
 			if(!prioridad_flag)index_inicial_p_actual = os_BuscarPosicion(prioridad_actual);
 		}
 		break;
@@ -407,7 +407,7 @@ void os_blockedTask(tarea *tarea,uint32_t n_tick)  {
 	uint8_t index_prioridad = 0; // posicion de la tarea en el vector de prioridades
 	tarea->estado = TAREA_BLOKED;
 	tarea->ticks_bloqueada = n_tick;
-	index_prioridad = (Prioridad_4-tarea->prioridad);
+	index_prioridad = (PRIORIDAD_4-tarea->prioridad);
 	// Saco la tarea del vector de activas, la posicion en el vector depende de su prioridad
 	controlStrct_OS.cant_tareas_activas[index_prioridad]--;
 	// La tarea se bloque por lo tanto se esperar� hasta una futura interupcion del Scheduler
@@ -427,7 +427,7 @@ void os_releaseTask(tarea *tarea)  {
 	uint8_t index_prioridad = 0;
 	tarea->estado = TAREA_READY;
 	tarea->ticks_bloqueada = 0;
-	index_prioridad = (Prioridad_4-tarea->prioridad);
+	index_prioridad = (PRIORIDAD_4-tarea->prioridad);
 	controlStrct_OS.cant_tareas_activas[index_prioridad]++;
 }
 /*************************************************************************************************
@@ -457,31 +457,31 @@ static void os_OrdenarPrioridades(void)  {
 	uint16_t i,p0,p1,p2,p3,p4;
 	tarea * p_tarea[MAX_NUM_TASK];
 	p4 = 0;
-	p3 = controlStrct_OS.prioridad_tareas[array_pos_p4];
-	p2 = controlStrct_OS.prioridad_tareas[array_pos_p3]+p3;
-	p1 = controlStrct_OS.prioridad_tareas[array_pos_p2]+p2;
-	p0 = controlStrct_OS.prioridad_tareas[array_pos_p1]+p1;
+	p3 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P4];
+	p2 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P3]+p3;
+	p1 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P2]+p2;
+	p0 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P1]+p1;
 
 	// Genero un array auxiliar con las tareas desordenadas
-	for(i=first_index_Tasks;i<controlStrct_OS.cant_tareas;i++){
+	for(i=FIRST_INDEX_TASKS;i<controlStrct_OS.cant_tareas;i++){
 		p_tarea[i] = controlStrct_OS.array_tareas[i];
 	}
-	for(i=first_index_Tasks;i<controlStrct_OS.cant_tareas;i++){
+	for(i=FIRST_INDEX_TASKS;i<controlStrct_OS.cant_tareas;i++){
 		switch (p_tarea[i]->prioridad)
 		{
-		case Prioridad_4:
+		case PRIORIDAD_4:
 			controlStrct_OS.array_tareas[p4] = p_tarea[i];
 			p4++;
 			break;
-		case Prioridad_3:
+		case PRIORIDAD_3:
 			controlStrct_OS.array_tareas[p3] = p_tarea[i];
 			p3++;
 			break;
-		case Prioridad_2:
+		case PRIORIDAD_2:
 			controlStrct_OS.array_tareas[p2] = p_tarea[i];
 			p2++;
 			break;
-		case Prioridad_1:
+		case PRIORIDAD_1:
 			controlStrct_OS.array_tareas[p1] = p_tarea[i];
 			p1++;
 			break;
@@ -505,23 +505,23 @@ static void os_OrdenarPrioridades(void)  {
 	 *  @return     posicion en el vector de tareas donde incia la prioridad actual
 ***************************************************************************************************/
 static uint8_t os_BuscarPosicion(uint8_t prioridad) {
-	uint8_t cant4 = controlStrct_OS.prioridad_tareas[array_pos_p4];
-	uint8_t cant3 = controlStrct_OS.prioridad_tareas[array_pos_p3];
-	uint8_t cant2 = controlStrct_OS.prioridad_tareas[array_pos_p2];
-	uint8_t cant1 = controlStrct_OS.prioridad_tareas[array_pos_p1];
+	uint8_t cant4 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P4];
+	uint8_t cant3 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P3];
+	uint8_t cant2 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P2];
+	uint8_t cant1 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P1];
 	uint8_t cant0 = cant4+cant3+cant2+cant1;	
 	switch (prioridad)
 	{
-	case Prioridad_4:
-		return array_pos_p4;
+	case PRIORIDAD_4:
+		return ARRAY_POS_P4;
 		break;
-	case Prioridad_3:
-		return array_pos_p4 + cant4;
+	case PRIORIDAD_3:
+		return ARRAY_POS_P4 + cant4;
 		break;
-	case Prioridad_2:
+	case PRIORIDAD_2:
 		return cant4 + cant3;
 		break;
-	case Prioridad_1:
+	case PRIORIDAD_1:
 		return cant4 + cant3 + cant2;
 		break;
 	default:

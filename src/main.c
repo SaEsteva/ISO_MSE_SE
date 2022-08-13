@@ -28,7 +28,7 @@ tarea tareaStruct6;		//estructura tarea de la tarea 6
 tarea tareaStruct7;		//estructura tarea de la tarea 7
 tarea tareaStruct8;		//estructura tarea de la tarea 8
 
-semaforo semaforo_binario;
+semaforo_bin semaforo_binario;
 
 /*==================[internal functions declaration]=========================*/
 
@@ -85,7 +85,7 @@ void tarea5(void)  {
 	int l;
 	while (1) {
 		l++;
-		Take_Semaforo(&semaforo_binario);
+		Take_Semaforo_Bin(&semaforo_binario);
 	}
 }
 void tarea6(void)  {
@@ -104,7 +104,7 @@ void tarea8(void)  {
 	int l;
 	while (1) {
 		l++;
-		Give_Semaforo(&semaforo_binario);
+		Give_Semaforo_Bin(&semaforo_binario);
 	}
 }
 /*============================================================================*/
@@ -122,7 +122,7 @@ int main(void)  {
 	os_InitTarea(&tareaStruct4,tarea4,4,3,"tarea4");
 	os_InitTarea(&tareaStruct8,tarea8,8,1,"tarea8");
 	
-	Init_Semaforo(&semaforo_binario);
+	Init_Semaforo_Bin(&semaforo_binario);
 
 	os_SistemInit();
 

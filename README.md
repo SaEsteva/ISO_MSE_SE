@@ -48,12 +48,26 @@ Genera un delay durante una cantidad de ticks de sistema indicado como parámetr
 Hace uso de la funcion **os_blockedTask** del core.
 
 ## Semaforo
-Se implementa un semáforo binario con la posiblidad de ser tomado y liberado utilizando las respectivas funciones, en caso de que el semaforo se encuentre tomado durante el llamado a la funcion **Take_Semaforo**, la tarea pasará al estado **TAREA_BLOCKED** hasta que el semáforo sea liberado. En caso de que nunca sea liberado el semáforo, por el momento la tareá volverá al estado READY luego de **4294967295** ticks de sistema (0xFFFFFFFF, valor máximo de la variable uint32_t ticks_bloqueada de la estructura de la tarea), en futuras versiones se tomará una medida mas adecuada.
+### Binario
+Se implementa un semáforo binario con la posiblidad de ser tomado y liberado utilizando las respectivas funciones, en caso de que el semaforo se encuentre tomado durante el llamado a la funcion **Take_Semaforo_Bin**, la tarea pasará al estado **TAREA_BLOCKED** hasta que el semáforo sea liberado. En caso de que nunca sea liberado el semáforo, por el momento la tareá volverá al estado READY luego de **4294967295** ticks de sistema (0xFFFFFFFF, valor máximo de la variable uint32_t ticks_bloqueada de la estructura de la tarea), en futuras versiones se tomará una medida mas adecuada.
 
-La funcion que libera el semáforo **Give_Semaforo** libera la tarea (usando **os_releaseTask**) , actualiza el estado del semáforo y llama a la api **CpuYield**
+La funcion que libera el semáforo **Give_Semaforo_Bin** libera la tarea (usando **os_releaseTask**) , actualiza el estado del semáforo y llama a la api **CpuYield**
+
+### Contador
+Se implementa un semáforo contador con un valor inicial y un valor máximo de cuentas. Se desarrollan las funciones de tomar y liberar el semáforo que suman o restan el contador respectivamente.
 
 ## Forzado de Scheduling
 Fuerza un llamado al scheduler del OS por parte de la API. La funcion correspondiente es **CpuYield**
 
 ## Colas
-Futuros desarrollos
+Se implementan colas de número enteros con un tamaño de 4 bytes máximo (futuras versiones contemplarán otro tipo de dato) y un tamaño máximo total de **N_MAX_COLA** bytes.
+
+En caso de no contar con datos a recibir o espacio en la cola para enviar datos, la tarea pasará al estado **TAREA_BLOCKED** hasta lograr su objetivo, el tiempo que permanece bloqueado se especifica en número de ticks de sistema cuando se llama a la tarea **Recibir_dCola** o **Enviar_aCola** .
+
+Para conocer el resultado al intentar enviar o recibir un mensaje en la cola, las funciones devuelven una variable de estado que puede ser:
+- ENVIO_DATO
+- ENVIO_DATO_TICK
+- NO_ENVIO_DATO
+- RECIBO_DATO
+- RECIBO_DATO_TICK
+- NO_RECIBO_DATO

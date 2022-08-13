@@ -63,9 +63,9 @@
 #define TASK_NAME_SIZE		8
 #define MAX_NUM_TASK		10
 #define MAX_PRIOR_TASK		4
-#define p_TaskIdle 			0 /*Prioridad minima de task idle*/
-#define id_TaskIdle 		MAX_NUM_TASK /*ID de task idle*/
-#define first_index_Tasks 	0 /*Index of the os taks*/
+#define P_TASKIDLE 			0 /*Prioridad minima de task idle*/
+#define ID_TASKIDLE 		MAX_NUM_TASK /*ID de task idle*/
+#define FIRST_INDEX_TASKS 	0 /*Index of the os taks*/
 
 
 /************************************************************************************
@@ -76,17 +76,17 @@
 #define OS_ERR_N_TAREAS			1
 
 // Posicion en el array de prioridades
-#define array_pos_p4			0
-#define array_pos_p3			1
-#define array_pos_p2			2
-#define array_pos_p1			3
-#define array_pos_pIdle			4
+#define ARRAY_POS_P4			0
+#define ARRAY_POS_P3			1
+#define ARRAY_POS_P2			2
+#define ARRAY_POS_P1			3
+#define ARRAY_POS_PIDLE			4
 
 // Prioridades
-#define Prioridad_1				1
-#define Prioridad_2				2
-#define Prioridad_3				3
-#define Prioridad_4				4
+#define PRIORIDAD_1				1
+#define PRIORIDAD_2				2
+#define PRIORIDAD_3				3
+#define PRIORIDAD_4				4
 
 typedef enum _prioridadTareas prioridadTareas;
 
@@ -140,6 +140,7 @@ struct _osControl{
 typedef struct _osControl osControl;
 
 /*==================[definicion de prototipos]=================================*/
+
 __WEAK void TickHook(void);
 __WEAK void errorHook(void);
 __WEAK void returnHook(void);

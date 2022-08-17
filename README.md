@@ -1,6 +1,7 @@
 # ISO_MSE_SE
 Sistema operativo desarrollado por Santiago Esteva como trabajo de la materia Implementacion de sistemas operativos 7ma Coherte 2022 de la Maestría en Sistemas Embebidos de la Facultad de Ingeniería, Universidad de Buenos Aires.
 
+
 # Sistema Operativo
 El sistema operativo permite crear una cantidad máxima de **MAX_NUM_TASK** tareas que correran en modo round robin dependiendo los grupos de prioridad con tres tipos de estados:
 - TAREA_READY 
@@ -40,6 +41,12 @@ Para pasar una tarea a bloqueado se implementa la funcion **os_blockedTask** que
 ## Tarea RELEASE
 Para liberar una tarea del estado bloqueado se implementa la funcion **os_releaseTask** que recibe como puntero la estructura de la tarea que se pretende liberar. Actualiza el estado, resetea el número de ticks recibidos.
 
+## Zona Crítica
+Se implementan las funciones para ingresar y salir de una zona crítica, para ello se debe habilitar y desabilitar las interrupciones respectivamente. 
+
+Sumado a ello se agrega el ingreso a la zona crítica en la función **PendSV_Handler.sx** 
+
+
 # API
 Se dearrolla la biblioteca de apis con las funcionalidades que se presentan en esta seccion.
 ## Delay
@@ -62,12 +69,18 @@ Fuerza un llamado al scheduler del OS por parte de la API. La funcion correspond
 ## Colas
 Se implementan colas de número enteros con un tamaño de 4 bytes máximo (futuras versiones contemplarán otro tipo de dato) y un tamaño máximo total de **N_MAX_COLA** bytes.
 
-En caso de no contar con datos a recibir o espacio en la cola para enviar datos, la tarea pasará al estado **TAREA_BLOCKED** hasta lograr su objetivo, el tiempo que permanece bloqueado se especifica en número de ticks de sistema cuando se llama a la tarea **Recibir_dCola** o **Enviar_aCola** .
+En caso de no contar con datos a recibir o espacio en la cola para enviar datos, la tarea pasará al estado **TAREA_BLOCKED** hasta lograr su objetivo, el tiempo que permanece bloqueado se especifica en número de ticks de sistema cuando se llama a la tarea **Recibir_dCola** o **Enviar_aCola** . Si los ticks de sistemas se concluyen y la tarea no logra enviar o recibir un dato, la tarea finaliza con el flag de estado correspondiente.
 
-Para conocer el resultado al intentar enviar o recibir un mensaje en la cola, las funciones devuelven una variable de estado que puede ser:
-- ENVIO_DATO
-- ENVIO_DATO_TICK
-- NO_ENVIO_DATO
-- RECIBO_DATO
-- RECIBO_DATO_TICK
-- NO_RECIBO_DATO
+Al finalizar la tarea de enviar o recibir cola se devuelve una variable de estado que puede ser:
+- **ENVIO_DATO** : envió el dato luego de llamar a la función
+- **ENVIO_DATO_TICK**: envió el dato luego de alguna cantidad de ticks en los cuales la tarea permanecio bloqueada
+- **NO_ENVIO_DATO**: no logró enviar el dato luego de cumplirse los ticks de sistema enviados como parámetro
+- **RECIBO_DATO**: recibió el dato luego de llamar a la función
+- **RECIBO_DATO_TICK**: recibió el dato luego de alguna cantidad de ticks en los cuales la tarea permanecio bloqueada
+- **NO_RECIBO_DATO**: no logró recibir el dato luego de cumplirse los ticks de sistema enviados como parámetro
+
+
+# IRQ
+Se implementas las IRQ de HW del sistema mediante la utilizacion de un vector de punteros, por cada interrupcion se debería habilitar o desabilitar indicando la funcion handler cuando sea correpondiente.
+
+El sistema operativo se encontrará en el estado **OS_INTERRUPT** cuando ocurra la ejecucion de las interrupciones y para el uso de colas y semáforos, se desarrolla una funcion particular para ello (este punto se encuentra en desarrollo)

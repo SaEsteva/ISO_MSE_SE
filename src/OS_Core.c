@@ -100,13 +100,13 @@ void os_InitTarea(tarea *tarea,void *entryPoint,uint8_t id_tarea, uint8_t priori
 		{
 		case 4:
 			tarea->prioridad = P_TASKIDLE+prioridad_tarea;
-			controlStrct_OS.prioridad_tareas[ARRAY_POS_P4]++;
-			controlStrct_OS.cant_tareas_activas[ARRAY_POS_P4]++;
+			controlStrct_OS.prioridad_tareas[ARRAY_POS_P0]++;
+			controlStrct_OS.cant_tareas_activas[ARRAY_POS_P0]++;
 			break;
 		case 3:
 			tarea->prioridad = P_TASKIDLE+prioridad_tarea;
-			controlStrct_OS.prioridad_tareas[ARRAY_POS_P3]++;
-			controlStrct_OS.cant_tareas_activas[ARRAY_POS_P3]++;
+			controlStrct_OS.prioridad_tareas[ARRAY_POS_P1]++;
+			controlStrct_OS.cant_tareas_activas[ARRAY_POS_P1]++;
 			break;
 		case 2:
 			tarea->prioridad = P_TASKIDLE+prioridad_tarea;
@@ -115,8 +115,8 @@ void os_InitTarea(tarea *tarea,void *entryPoint,uint8_t id_tarea, uint8_t priori
 			break;
 		case 1:
 			tarea->prioridad = P_TASKIDLE+prioridad_tarea;
-			controlStrct_OS.prioridad_tareas[ARRAY_POS_P1]++;
-			controlStrct_OS.cant_tareas_activas[ARRAY_POS_P1]++;
+			controlStrct_OS.prioridad_tareas[ARRAY_POS_P3]++;
+			controlStrct_OS.cant_tareas_activas[ARRAY_POS_P3]++;
 			break;
 		default:
 			tarea->prioridad = P_TASKIDLE;
@@ -306,9 +306,9 @@ static void scheduler(void)  {
 		 * ubicada en el array de tareas. Para esto se debe tener en cuenta el arreglo de prioridades. Por esto se analiza 
 		 * de mas prioridad a menos priodidad.
 		*/
-		index_prior = ARRAY_POS_P4;
+		index_prior = ARRAY_POS_P0;
 		index_actual_task = controlStrct_OS.index_tareas;
-		prioridad_actual = PRIORIDAD_4 - index_prior;
+		prioridad_actual = PRIORIDAD_0 - index_prior;
 		index_inicial_p_actual = os_BuscarPosicion(prioridad_actual);
 		while(!loop){
 			cant_misma_prioridad = controlStrct_OS.prioridad_tareas[index_prior];
@@ -347,7 +347,7 @@ static void scheduler(void)  {
 					loop = 1;
 				}
 			}
-			prioridad_actual = PRIORIDAD_4 - index_prior;
+			prioridad_actual = PRIORIDAD_0 - index_prior;
 			if(!prioridad_flag)index_inicial_p_actual = os_BuscarPosicion(prioridad_actual);
 		}
 		break;
@@ -407,7 +407,7 @@ void os_blockedTask(tarea *tarea,uint32_t n_tick)  {
 	uint8_t index_prioridad = 0; // posicion de la tarea en el vector de prioridades
 	tarea->estado = TAREA_BLOKED;
 	tarea->ticks_bloqueada = n_tick;
-	index_prioridad = (PRIORIDAD_4-tarea->prioridad);
+	index_prioridad = (PRIORIDAD_0-tarea->prioridad);
 	// Saco la tarea del vector de activas, la posicion en el vector depende de su prioridad
 	controlStrct_OS.cant_tareas_activas[index_prioridad]--;
 	// La tarea se bloque por lo tanto se esperar� hasta una futura interupcion del Scheduler
@@ -427,7 +427,7 @@ void os_releaseTask(tarea *tarea)  {
 	uint8_t index_prioridad = 0;
 	tarea->estado = TAREA_READY;
 	tarea->ticks_bloqueada = 0;
-	index_prioridad = (PRIORIDAD_4-tarea->prioridad);
+	index_prioridad = (PRIORIDAD_0-tarea->prioridad);
 	controlStrct_OS.cant_tareas_activas[index_prioridad]++;
 }
 /*************************************************************************************************
@@ -456,11 +456,11 @@ void os_Error(int32_t error)  {
 static void os_OrdenarPrioridades(void)  {
 	uint16_t i,p0,p1,p2,p3,p4;
 	tarea * p_tarea[MAX_NUM_TASK];
-	p4 = 0;
-	p3 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P4];
-	p2 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P3]+p3;
-	p1 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P2]+p2;
-	p0 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P1]+p1;
+	p0 = 0;
+	p1 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P0];
+	p2 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P3]+p1;
+	p3 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P2]+p2;
+	p4 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P1]+p3;
 
 	// Genero un array auxiliar con las tareas desordenadas
 	for(i=FIRST_INDEX_TASKS;i<controlStrct_OS.cant_tareas;i++){
@@ -469,24 +469,24 @@ static void os_OrdenarPrioridades(void)  {
 	for(i=FIRST_INDEX_TASKS;i<controlStrct_OS.cant_tareas;i++){
 		switch (p_tarea[i]->prioridad)
 		{
-		case PRIORIDAD_4:
-			controlStrct_OS.array_tareas[p4] = p_tarea[i];
-			p4++;
-			break;
-		case PRIORIDAD_3:
-			controlStrct_OS.array_tareas[p3] = p_tarea[i];
-			p3++;
-			break;
-		case PRIORIDAD_2:
-			controlStrct_OS.array_tareas[p2] = p_tarea[i];
-			p2++;
+		case PRIORIDAD_0:
+			controlStrct_OS.array_tareas[p0] = p_tarea[i];
+			p0++;
 			break;
 		case PRIORIDAD_1:
 			controlStrct_OS.array_tareas[p1] = p_tarea[i];
 			p1++;
 			break;
+		case PRIORIDAD_2:
+			controlStrct_OS.array_tareas[p2] = p_tarea[i];
+			p2++;
+			break;
+		case PRIORIDAD_3:
+			controlStrct_OS.array_tareas[p3] = p_tarea[i];
+			p3++;
+			break;
 		default:
-			controlStrct_OS.array_tareas[p0] = p_tarea[i];
+			controlStrct_OS.array_tareas[p4] = p_tarea[i];
 			p0++;
 			break;
 		}
@@ -505,27 +505,27 @@ static void os_OrdenarPrioridades(void)  {
 	 *  @return     posicion en el vector de tareas donde incia la prioridad actual
 ***************************************************************************************************/
 static uint8_t os_BuscarPosicion(uint8_t prioridad) {
-	uint8_t cant4 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P4];
-	uint8_t cant3 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P3];
-	uint8_t cant2 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P2];
+	uint8_t cant0 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P0];
 	uint8_t cant1 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P1];
-	uint8_t cant0 = cant4+cant3+cant2+cant1;	
+	uint8_t cant2 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P2];
+	uint8_t cant3 = controlStrct_OS.prioridad_tareas[ARRAY_POS_P3];
+	uint8_t cant4 = cant0+cant1+cant2+cant3;	
 	switch (prioridad)
 	{
-	case PRIORIDAD_4:
-		return ARRAY_POS_P4;
-		break;
-	case PRIORIDAD_3:
-		return ARRAY_POS_P4 + cant4;
-		break;
-	case PRIORIDAD_2:
-		return cant4 + cant3;
+	case PRIORIDAD_0:
+		return ARRAY_POS_P0;
 		break;
 	case PRIORIDAD_1:
-		return cant4 + cant3 + cant2;
+		return ARRAY_POS_P0 + cant0;
+		break;
+	case PRIORIDAD_2:
+		return cant0 + cant1;
+		break;
+	case PRIORIDAD_3:
+		return cant0 + cant1 + cant2;
 		break;
 	default:
-		return cant0;
+		return cant4;
 		break;
 	}
 }
@@ -555,4 +555,60 @@ tarea* os_ActualTask(){
 ***************************************************************************************************/
 void os_Scheduling(){
 	scheduler();
+}
+
+/*************************************************************************************************
+	 *  @brief Consulta el estado del OS
+     *
+     *  @details
+     *   Consulta el estado del OS para ser utilizado por otros recursos
+     *
+	 *  @param 		None
+	 *  @return     estado actual del OS
+***************************************************************************************************/
+estadoOS os_Estado(){
+	return controlStrct_OS.estado_sistema;
+}
+
+/*************************************************************************************************
+	 *  @brief Modifica el estado del OS
+     *
+     *  @details
+     *   Modifica el estado del OS para ser utilizado por otros recursos
+     *
+	 *  @param 		nuevo_estado
+	 *  @return     None.
+***************************************************************************************************/
+void os_NuevoEstado(estadoOS nuevo_estado){
+	controlStrct_OS.estado_sistema = nuevo_estado;
+}
+
+
+/*************************************************************************************************
+	 *  @brief Entrar a zona crítica
+     *
+     *  @details
+     *   Ingresa a una zona crítica por lo que debe desabilitar las interrupciones de hw
+     *
+	 *  @param 		None
+	 *  @return     estado 
+***************************************************************************************************/
+inline bool os_enter_critical(){
+	__disable_irq();
+	controlStrct_OS.criticalZone = true;
+}
+
+
+/*************************************************************************************************
+	 *  @brief Salid de zona crítica
+     *
+     *  @details
+     *   Sale de una zona crítica por lo que debe habulitar las interrupciones de hw
+     *
+	 *  @param 		None
+	 *  @return     None
+***************************************************************************************************/
+inline void os_exit_critical(){
+	controlStrct_OS.criticalZone = true;
+	__enable_irq();
 }

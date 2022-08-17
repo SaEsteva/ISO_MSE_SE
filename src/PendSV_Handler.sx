@@ -36,6 +36,7 @@
 
 
 PendSV_Handler:
+	cpsid i			//desabilitar interrupciones para ingresar en zona crítica
 /*
 	tst lr,0x10 //bit 4 del EXEC_RETURN es cero?
 	it eq
@@ -51,4 +52,5 @@ PendSV_Handler:
 	it eq
 	vpopeq {s16-s31} //Si, POP de FPU reg
 */
+	cpsie i			//habilita las interrupciones para salir de la zona crítica
 	bx lr //retorno de PendSV

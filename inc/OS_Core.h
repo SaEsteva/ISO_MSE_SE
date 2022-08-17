@@ -76,17 +76,17 @@
 #define OS_ERR_N_TAREAS			1
 
 // Posicion en el array de prioridades
-#define ARRAY_POS_P4			0
-#define ARRAY_POS_P3			1
+#define ARRAY_POS_P0			0
+#define ARRAY_POS_P1			1
 #define ARRAY_POS_P2			2
-#define ARRAY_POS_P1			3
+#define ARRAY_POS_P3			3
 #define ARRAY_POS_PIDLE			4
 
 // Prioridades
-#define PRIORIDAD_1				1
+#define PRIORIDAD_3				1
 #define PRIORIDAD_2				2
-#define PRIORIDAD_3				3
-#define PRIORIDAD_4				4
+#define PRIORIDAD_1				3
+#define PRIORIDAD_0				4
 
 typedef enum _prioridadTareas prioridadTareas;
 
@@ -124,7 +124,7 @@ typedef struct _tarea tarea;
 /*==================[Estructura de control del OS]=================================*/
 struct _osControl{
 	bool 		next_task; 								// flag tarea siguiente, se debe cambiar de contexto
-	bool 		schedulerIRQ; 							// flag scheduling al volver de IRQ
+	bool 		criticalZone; 							// flag scheduling al volver de IRQ
 	tarea 		*tarea_actual;
 	tarea 		*tarea_siguiente;
 	tarea 		*array_tareas[MAX_NUM_TASK+1];			// Arreglo con todas las tareas actuales
@@ -159,5 +159,7 @@ static void os_OrdenarPrioridades(void);
 static uint8_t os_BuscarPosicion(uint8_t);
 tarea* os_ActualTask(void);
 void os_Scheduling(void);
+estadoOS os_Estado(void);
+void os_NuevoEstado(estadoOS);
 
-#endif /* ISO_I_2020_MSE_OS_INC_MSE_OS_CORE_H_ */
+#endif 

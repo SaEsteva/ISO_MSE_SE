@@ -66,4 +66,4 @@ estadoCola Enviar_aCola(cola* , uint32_t	*, uint32_t );
 estadoCola Recibir_dCola(cola* , uint32_t	*, uint32_t );
 void CpuYield(void);
 
-#endif /* ISO_I_2020_MSE_OS_INC_MSE_OS_CORE_H_ */
+#endif

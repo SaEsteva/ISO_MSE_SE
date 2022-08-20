@@ -12,6 +12,7 @@
      *
      *  @details
      *   Pone un retardo especificado en número de ticks a la tarea actual
+	 * 	 Si la funcion se llama desde una IRQ, se ejecuta el errorHock correspondiente
      *
 	 *  @param 		*tarea	Puntero a la estructura de la tarea.
 	 *  @param 		ticks_delay	cantidad de ticks de sistema de retardo
@@ -19,6 +20,10 @@
 ***************************************************************************************************/
 void Delay(uint8_t ticks_delay){
 	tarea * p_actualTask;
+
+	// Si la tarea se llama desde un IRQ y se encuentra llena. Genera un error del OS
+	if (os_Estado() == OS_INTERRUPT)os_Error(OS_ERR_DELAY_FROM_IRQ);
+
 	p_actualTask = (tarea*)os_ActualTask();
 	os_blockedTask(p_actualTask,ticks_delay);
 }
@@ -42,6 +47,8 @@ void Init_Semaforo_Bin(semaforo_bin* semaforo_binario){
      *
      *  @details
      *   Toma el semáforo, en caso de encontrarse tomado la tarea que toma el semáforo pasa a estar en ready
+	 * 	 Si la funcion se llama desde una IRQ, y el semáforo está tomado, se ejecuta el errorHock correspondiente
+	 * 	 En caso de tomar el semaforo sin problema desde una IRQ, se hace un rescheduling
      *
 	 *  @param 		semaforo_binario*	puntero al semaforo binario a ser tomado
 	 *  @return     None
@@ -49,18 +56,28 @@ void Init_Semaforo_Bin(semaforo_bin* semaforo_binario){
 void Take_Semaforo_Bin(semaforo_bin* semaforo_binario){
 	tarea * p_actualTask;
 	p_actualTask = (tarea*)os_ActualTask();
+	estadoOS EstadoActualOS;
+
+	EstadoActualOS = os_Estado();
 	/*
 	 * Mientras el semáforo este tomado, la tarea debe permanecer bloqueada
 	*/
 	while(semaforo_binario->estado){
+		// Si la tarea se llama desde un IRQ y se encuentra tomado. Genera un error del OS
+		if (EstadoActualOS == OS_INTERRUPT)os_Error(OS_ERR_SEM_BIN_TOMADO);
+		
+		os_enter_critical();
 		semaforo_binario->tarea_usa = p_actualTask;
 		os_blockedTask(p_actualTask,MAX_TICKS_SEM);
+		os_exit_critical();
 		CpuYield();
 	}
 	/*
 	 * Si el semaforo no esta tomado, la tarea lo toma
 	*/
 	semaforo_binario->estado = true;
+	// Si la tarea que lo toma es una IRQ, se llama a rescheduling
+	if (EstadoActualOS == OS_INTERRUPT)CpuYield();
 }
 
 /*************************************************************************************************
@@ -75,11 +92,7 @@ void Take_Semaforo_Bin(semaforo_bin* semaforo_binario){
 void Give_Semaforo_Bin(semaforo_bin* semaforo_binario){
 	if(semaforo_binario->estado) os_releaseTask(semaforo_binario->tarea_usa);
 	semaforo_binario->estado = false;
-	/*
-	 * Cuando se aplique inversión de prioridades, se debe agregar abajo de esta linea para aumentar la prioridad
-	 * de la tarea con el semaforo al valor máximo para que se ejecute
-	*/
-
+	
 	CpuYield();
 }
 
@@ -105,6 +118,7 @@ void Init_Semaforo_Cont(semaforo_cont* semaforo_contador,uint8_t max_count, uint
      *
      *  @details
      *   Toma el semáforo, en caso de encontrarse tomado la tarea que toma el semáforo pasa a estar en ready
+	 * 	 En caso de ejecutar la funcion por una IRQ, se ejecuta un rescheduling al finalizar
      *
 	 *  @param 		semaforo_contador*	puntero al semaforo binario a ser tomado
 	 *  @return     None
@@ -112,6 +126,9 @@ void Init_Semaforo_Cont(semaforo_cont* semaforo_contador,uint8_t max_count, uint
 void Take_Semaforo_Cont(semaforo_cont* semaforo_contador){
 	// En caso de que el contador no sea 0, decremento
 	if (semaforo_contador->contador>0)semaforo_contador->contador--;
+
+	// En caso de que se haya llamado desde una IRQ, hago un rescheduling
+	if (os_Estado() == OS_INTERRUPT)CpuYield();
 }
 
 /*************************************************************************************************
@@ -119,13 +136,17 @@ void Take_Semaforo_Cont(semaforo_cont* semaforo_contador){
      *
      *  @details
      *   Libera el semáforo
-     *
+     *   En caso de ejecutar la funcion por una IRQ, se ejecuta un rescheduling al finalizar
+	 * 
 	 *  @param 		semaforo_contador*	puntero al semaforo contador a ser liberado
 	 *  @return     None
 ***************************************************************************************************/
 void Give_Semaforo_Cont(semaforo_cont* semaforo_contador){
 	// En caso de que el contador no haya llegado al maximo, aumento su valor
 	if (semaforo_contador->contador <= semaforo_contador->maximo)semaforo_contador->contador++;
+
+	// En caso de que se haya llamado desde una IRQ, hago un rescheduling
+	if (os_Estado() == OS_INTERRUPT)CpuYield();
 }
 
 /*************************************************************************************************
@@ -159,7 +180,8 @@ bool Init_Cola(	cola* p_cola, uint16_t	tipo_dato, uint16_t	cant_datos){
      *
      *  @details
      *   Enviar el dato a la cola, en caso de no contar con tamaño en la cola se bloque la tarea en la cantidad de ticks
-	 * 	enviada como parametro
+	 * 	enviada como parametro  
+	 *  En caso de ejecutar la funcion por una IRQ, se ejecuta un rescheduling al finalizar
      *
 	 *  @param 		p_cola*			puntero a la cola a enviar un dato
 	 *  @param 		dato*			puntero al dato a enviar, la cantidad debe ser la que se definio en la cola 
@@ -171,7 +193,9 @@ estadoCola Enviar_aCola(cola* p_cola, uint32_t	*dato, uint32_t ticks_wait){
 	tarea * p_actualTask;
 	estadoCola status;
 	uint16_t loop;
+	estadoOS EstadoActualOS;
 
+	EstadoActualOS = os_Estado();
 	loop = 0;
 	while (loop<2)
 	{
@@ -188,14 +212,21 @@ estadoCola Enviar_aCola(cola* p_cola, uint32_t	*dato, uint32_t ticks_wait){
 			loop=2;
 			// En caso de que haya una tarea bloqueada por la cola, la desbloqueo
 			if (p_cola->tarea_bloqueda != NULL){
+				os_enter_critical();
 				os_releaseTask(p_cola->tarea_bloqueda);
 				p_cola->tarea_bloqueda = NULL;
+				os_exit_critical();
 			}
 		}else{
+			// Si la tarea se llama desde un IRQ y se encuentra llena. Genera un error del OS
+			if (EstadoActualOS == OS_INTERRUPT)os_Error(OS_ERR_COLA_COMPLETA);
+
 			if(loop == 0){
+				os_enter_critical();
 				p_actualTask = (tarea*)os_ActualTask();
 				p_cola->tarea_bloqueda = p_actualTask;
 				os_blockedTask(p_actualTask,ticks_wait);
+				os_exit_critical();
 				CpuYield();
 				// Retorno al finalizar el tick, vuelvo a intentar enviar el dato
 				loop++;
@@ -207,6 +238,10 @@ estadoCola Enviar_aCola(cola* p_cola, uint32_t	*dato, uint32_t ticks_wait){
 			}			
 		}
 	}
+
+	// En caso de que se haya llamado desde una IRQ, hago un rescheduling
+	if (EstadoActualOS == OS_INTERRUPT)CpuYield();
+
 	return status;
 }
 
@@ -226,6 +261,9 @@ estadoCola Recibir_dCola(cola* p_cola, uint32_t	*dato, uint32_t ticks_wait){
 	tarea * p_actualTask;
 	estadoCola status;
 	uint16_t loop;
+	estadoOS EstadoActualOS;
+
+	EstadoActualOS = os_Estado();
 
 	loop = 0;
 	while (loop<2)
@@ -247,6 +285,9 @@ estadoCola Recibir_dCola(cola* p_cola, uint32_t	*dato, uint32_t ticks_wait){
 				p_cola->tarea_bloqueda = NULL;
 			}
 		}else{
+			// Si la tarea se llama desde un IRQ y se encuentra vacia. Genera un error del OS
+			if (EstadoActualOS == OS_INTERRUPT)os_Error(OS_ERR_COLA_VACIA);
+
 			if(loop == 0){
 				p_actualTask = (tarea*)os_ActualTask();
 				p_cola->tarea_bloqueda = p_actualTask;
@@ -261,6 +302,9 @@ estadoCola Recibir_dCola(cola* p_cola, uint32_t	*dato, uint32_t ticks_wait){
 			}			
 		}
 	}
+
+	// En caso de que se haya llamado desde una IRQ, hago un rescheduling
+	if (EstadoActualOS == OS_INTERRUPT)CpuYield();
 	return status;
 }
 

@@ -175,7 +175,7 @@ static void os_InitTareaIdle(void){
 void os_SistemInit()  {
 
 	NVIC_SetPriority(PendSV_IRQn, (1 << __NVIC_PRIO_BITS)-1);
-	controlStrct_OS.schedulerIRQ = false;
+	controlStrct_OS.criticalZone = false;
 	controlStrct_OS.tarea_actual = NULL;
 	controlStrct_OS.tarea_siguiente = NULL;
 	controlStrct_OS.error = 0;
@@ -434,12 +434,14 @@ void os_releaseTask(tarea *tarea)  {
 	 *  @brief Actualiza la estrucutra con el error y ejecutra el hook
      *
      *  @details
-     *   Actualiza la estrucutra con el error que recibe como parametro y ejecutra el errorHook
+     *   Actualiza la estrucutra con el error que recibe como parametro, engtra a un estado crítico para
+	 * 	que ninguna IRQ lo saque del estado y ejecuta el errorHook
      *
 	 *  @param 		error	Error ocurrido
 	 *  @return     None
 ***************************************************************************************************/
 void os_Error(int32_t error)  {
+	os_enter_critical();
 	controlStrct_OS.error = error;
 	errorHook();
 }

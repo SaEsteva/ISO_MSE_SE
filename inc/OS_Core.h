@@ -74,6 +74,10 @@
 
 // Errores
 #define OS_ERR_N_TAREAS			1
+#define OS_ERR_COLA_COMPLETA	2
+#define OS_ERR_COLA_VACIA		3
+#define OS_ERR_SEM_BIN_TOMADO	4
+#define OS_ERR_DELAY_FROM_IRQ	5
 
 // Posicion en el array de prioridades
 #define ARRAY_POS_P0			0

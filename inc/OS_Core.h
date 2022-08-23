@@ -165,5 +165,7 @@ tarea* os_ActualTask(void);
 void os_Scheduling(void);
 estadoOS os_Estado(void);
 void os_NuevoEstado(estadoOS);
+void os_enter_critical();
+void os_exit_critical();
 
 #endif 

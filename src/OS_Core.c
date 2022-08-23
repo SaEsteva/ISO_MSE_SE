@@ -489,7 +489,7 @@ static void os_OrdenarPrioridades(void)  {
 			break;
 		default:
 			controlStrct_OS.array_tareas[p4] = p_tarea[i];
-			p0++;
+			p4++;
 			break;
 		}
 	}
@@ -593,9 +593,9 @@ void os_NuevoEstado(estadoOS nuevo_estado){
      *   Ingresa a una zona crítica por lo que debe desabilitar las interrupciones de hw
      *
 	 *  @param 		None
-	 *  @return     estado 
+	 *  @return     None
 ***************************************************************************************************/
-inline bool os_enter_critical(){
+void os_enter_critical(){
 	__disable_irq();
 	controlStrct_OS.criticalZone = true;
 }
@@ -610,7 +610,7 @@ inline bool os_enter_critical(){
 	 *  @param 		None
 	 *  @return     None
 ***************************************************************************************************/
-inline void os_exit_critical(){
-	controlStrct_OS.criticalZone = true;
+void os_exit_critical(){
+	controlStrct_OS.criticalZone = false;
 	__enable_irq();
 }

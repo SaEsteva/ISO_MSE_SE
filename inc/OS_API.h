@@ -25,8 +25,8 @@ struct _semaforo_bin{
 typedef struct _semaforo_bin semaforo_bin;
 
 struct _semaforo_cont{
-	uint8_t contador; 	// contador del semáforo
-	uint8_t	maximo; 	// valor máximo del contador
+	uint16_t contador; 	// contador del semáforo
+	uint16_t	maximo; 	// valor máximo del contador
 };
 
 typedef struct _semaforo_cont semaforo_cont;
@@ -54,11 +54,11 @@ typedef enum _estadoCola estadoCola;
 
 /*==================[definicion de prototipos]=================================*/
 
-void Delay(uint8_t );
+void Delay(uint32_t );
 void Init_Semaforo_Bin(semaforo_bin* );
 void Take_Semaforo_Bin(semaforo_bin* );
 void Give_Semaforo_Bin(semaforo_bin* );
-void Init_Semaforo_Cont(semaforo_cont* ,uint8_t , uint8_t );
+void Init_Semaforo_Cont(semaforo_cont* ,uint16_t , uint16_t );
 void Take_Semaforo_Cont(semaforo_cont* );
 void Give_Semaforo_Cont(semaforo_cont* );
 bool Init_Cola(	cola* , uint16_t	, uint16_t	);

@@ -18,7 +18,7 @@
 	 *  @param 		ticks_delay	cantidad de ticks de sistema de retardo
 	 *  @return     None
 ***************************************************************************************************/
-void Delay(uint8_t ticks_delay){
+void Delay(uint32_t ticks_delay){
 	tarea * p_actualTask;
 
 	// Si la tarea se llama desde un IRQ y se encuentra llena. Genera un error del OS
@@ -108,7 +108,7 @@ void Give_Semaforo_Bin(semaforo_bin* semaforo_binario){
 	 * 	@param 		incial_count	valor inicial de la cuenta
 	 *  @return     None
 ***************************************************************************************************/
-void Init_Semaforo_Cont(semaforo_cont* semaforo_contador,uint8_t max_count, uint8_t incial_count){
+void Init_Semaforo_Cont(semaforo_cont* semaforo_contador,uint16_t max_count, uint16_t incial_count){
 	semaforo_contador->contador = incial_count;
 	semaforo_contador->maximo = max_count;
 }
@@ -220,7 +220,10 @@ estadoCola Enviar_aCola(cola* p_cola, uint32_t	*dato, uint32_t ticks_wait){
 		}else{
 			// Si la tarea se llama desde un IRQ y se encuentra llena. Genera un error del OS
 			if (EstadoActualOS == OS_INTERRUPT)os_Error(OS_ERR_COLA_COMPLETA);
-
+			
+			// Si el ticks_wait enviado vale 0, la tarea sale.
+			if (ticks_wait == 0) loop = 1;
+			
 			if(loop == 0){
 				os_enter_critical();
 				p_actualTask = (tarea*)os_ActualTask();
@@ -287,6 +290,9 @@ estadoCola Recibir_dCola(cola* p_cola, uint32_t	*dato, uint32_t ticks_wait){
 		}else{
 			// Si la tarea se llama desde un IRQ y se encuentra vacia. Genera un error del OS
 			if (EstadoActualOS == OS_INTERRUPT)os_Error(OS_ERR_COLA_VACIA);
+
+			// Si el ticks_wait enviado vale 0, la tarea sale.
+			if (ticks_wait == 0) loop = 1;
 
 			if(loop == 0){
 				p_actualTask = (tarea*)os_ActualTask();

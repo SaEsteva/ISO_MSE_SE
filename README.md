@@ -86,6 +86,8 @@ Se implementan colas de número enteros con un tamaño de 4 bytes máximo (futur
 
 En caso de no contar con datos a recibir o espacio en la cola para enviar datos, la tarea pasará al estado **TAREA_BLOCKED** hasta lograr su objetivo, el tiempo que permanece bloqueado se especifica en números de ticks de sistema cuando se llama a la tarea **Recibir_dCola()** o **Enviar_aCola()** . Si los ticks de sistemas concluyen y la tarea no logra enviar o recibir un dato, la tarea finaliza con el flag de estado correspondiente.
 
+En caso de quere que la tarea retorne cuando no logra enviar o recibir un valor de la cola, sin estar bloqueada, se debe colocar el valor **0** en los ticks. En este caso se recibirá el flag de **NO_ENVIO_DATO o NO_RECIBO_DATO**
+
 Al finalizar la tarea de enviar o recibir cola se devuelve una variable de estado que puede ser:
 - **ENVIO_DATO** : envió el dato luego de llamar a la función
 - **ENVIO_DATO_TICK**: envió el dato luego de alguna cantidad de ticks en los cuales la tarea permanecio bloqueada
@@ -103,3 +105,33 @@ Se implementas las IRQ de HW del sistema mediante la utilizacion de un vector de
 El sistema operativo se encontrará en el estado **OS_INTERRUPT** cuando ocurra la ejecucion de las interrupciones y para el uso de colas y semáforos, de pueden utilziar las funciones de la API pero se deben considerar los errores posibles del SO detallados en la documentacion. 
 
 **Nota: En caso de utilizar funciones que modifican el estado de las tareas asociasdas dentro de una IRQ, el SO generará un errorHook. Es por esto que se recomienda analizar con atención qué APIs se utilizarán dentro de un handler de IRQ.** 
+
+# EJEMPLO DE USO   
+Para demostrar la funcionalidad del SO se decide desarrollar el siguiente ejemplo de uso:
+
+Se pretende contar la cantidad de botellas fabricadas en una linea, para esto, se cuenta con un sensor inductor ubicado a la salida del estrusor que se pone en alto cada vez que una botella pasa. A su vez se cuenta con un segundo sensor ubicado en la linea de productos descartados que nos permite conocer el número total de botellas fabricadas sin errores.
+
+El sistema debe realizar lo siguiente:
+- Contar la cantidad de botellas que salen del estrusor.
+- Contar la cantidad de botellas que se descartan.
+- Contar la cantidad de botellas fabricadas exitosamente.
+- Atender y responder la consulta por UART del operario sobre las tres cantidades de botellas posibles.
+- Contar con leds de estado por cada uno de los dos sensores inductivos.
+
+Los sensores inductivos serán representados por los botones de la Placa EDU-CIAA, contarán con un proceso de rebote similar a lo que se tendría con una señal digital de un sensor inductivo.
+
+La trama de comunicación entre el la PC y la EDU-CIAA será "Indicar Valores Registados\n" en la solcitud y la respuesta será "Cant Totales: XX\t Cant Fabricadas: YY\t Cant Descartadas: ZZ\n" con XX, YY y ZZ los últimos valores registados.
+
+Luego de cada consulta por parte del operario, se resetearán los valores de conteo y se inicia con un nuevo batch de datos.
+
+## Solucion del Ejemplo
+El ejercicio puede ser resuelto de infinidad de maneras, sin embargo la que se plantea en este caso, pretende utilizar la mayor cantidad de funciones para corroborar su funcionamiento. Se crean tras interrupciones de Hardware:
+- **Handler_Comunicacion**: Recepcion de UART, entrega el semáforo binario **semaforo_UART** una vez que recibe un mensaje con fin de linea.
+- **Handler_sensor1**: Lecuta de la tecla 1 al ser presionada para simular el sensor 1, aumenta el contador **semaforo_sensor_descarte** cada vez que se ejcuta.
+- **Handler_sensor2**: Lecuta de la tecla 2 al ser presionada para simular el sensor 2, aumenta el contador **semaforo_sensor_estrusor** cada vez que se ejcuta.
+
+Para el ciclo normal de funcionamiento se cuenta con 4 tareas:
+- **tareaLed** : Tarea de baja prioridad que togglea un led.
+- **ContarBotellasEstrusor** : Tarea de alta prioridad que cada **TIEMPOMUESTRASBOTELLAS** ticks de sistema optiene el valor del semáforo contador correspondinete y lo carga en la cola **botellas_fabricadas**
+- **ContarBotellasDescarte** : Tarea de alta prioridad que cada **TIEMPOMUESTRASBOTELLAS** ticks de sistema optiene el valor del semáforo contador correspondinete y lo carga en la cola **botellas_desechadas**
+- **ResponderUART** : Tarea de prioridad media que responde el mensaje de UART. Lee los datos de las dos colas (dejandolas vacias), calcula la cantidad de botellas totales y envia el mensaje.

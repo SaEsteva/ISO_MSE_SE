@@ -21,11 +21,8 @@ extern "C" {
 #define MILISEC						1000
 #define CANT_TAREAS 				4
 
-#define TIMELED						1000
+#define TIMELED						200
 
-// #define LEDR 						40
-// #define LEDG 						41
-// #define LED1 						43
 #define USB_HOST_ONLY
 
 #define BUTTON_LOGIC 				BUTTON_ONE_IS_UP
@@ -38,9 +35,9 @@ extern "C" {
 #define StopMessage					10	// decimal number of LF new line
 
 #define UART_BR						115200
-// #define UART_USB					3
+#define TIEMPOUART 		            10000/TIMELED // ms -> 30 s
 
-#define TIEMPOMUESTRASBOTELLAS 		10000 // ms -> 10 s
+#define TIEMPOMUESTRASBOTELLAS 		5000 // ms -> 10 s
 #define CANTMAXIMABOTELLASOK 		30000
 #define CANTMAXIMABOTELLASDESCARTE	30000
 

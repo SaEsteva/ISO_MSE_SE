@@ -17,10 +17,10 @@
 #include "sapi_uart.h"
 #include "sapi_peripheral_map.h"
 
-#define TEC1_PORT_NUM   0
+#define TEC1_PORT_NUM   1
 #define TEC1_BIT_VAL    4
 
-#define TEC2_PORT_NUM   0
+#define TEC2_PORT_NUM   3
 #define TEC2_BIT_VAL    8
 
 /*==================[macros and definitions]=================================*/
@@ -50,9 +50,16 @@ cola botellas_desechadas;
 
 /*==================[Definicion de tareas para el OS]==========================*/
 void tareaLed(void)  {
+	uint16_t n_loop;
+	n_loop = 0;
 	while (1) {
 		Delay(TIMELED);
 		gpioToggle(LED1);
+		n_loop++;
+		if(n_loop >= TIEMPOUART){
+			Give_Semaforo_Bin(&semaforo_UART);
+			n_loop = 0;
+		}
 	}
 }
 
@@ -64,15 +71,17 @@ void ContarBotellasEstrusor(void)  {
 		Delay(TIEMPOMUESTRASBOTELLAS);
 		os_enter_critical();
 		cantidad = semaforo_sensor_estrusor.contador;
-		while (semaforo_sensor_estrusor.contador>0)
-		{
-			Take_Semaforo_Cont(&semaforo_sensor_estrusor);
-		}
-		status = Enviar_aCola(&botellas_desechadas, &cantidad, 0);
-		if (status == NO_ENVIO_DATO){
-			// Error, la cola se lleno. Se prende el LED Rojo
-			gpioWrite(LEDG,false);
-			gpioWrite(LEDR,true);
+		if (cantidad > 0) {
+			while (semaforo_sensor_estrusor.contador>0)
+					{
+						Take_Semaforo_Cont(&semaforo_sensor_estrusor);
+					}
+					status = Enviar_aCola(&botellas_fabricadas, &cantidad, 0);
+					if (status == NO_ENVIO_DATO){
+						// Error, la cola se lleno. Se prende el LED Rojo
+						gpioWrite(LEDG,false);
+						gpioWrite(LEDR,true);
+					}
 		}
 		os_exit_critical();
 	}
@@ -86,15 +95,17 @@ void ContarBotellasDescarte(void)  {
 		Delay(TIEMPOMUESTRASBOTELLAS);
 		os_enter_critical();
 		cantidad = semaforo_sensor_descarte.contador;
-		while (semaforo_sensor_descarte.contador>0)
-		{
-			Take_Semaforo_Cont(&semaforo_sensor_descarte);
-		}
-		status = Enviar_aCola(&botellas_fabricadas, &cantidad, 0);
-		if (status == NO_ENVIO_DATO){
-			// Error, la cola se lleno. Se prende el LED Rojo
-			gpioWrite(LEDG,false);
-			gpioWrite(LEDR,true);
+		if (cantidad > 0) {
+			while (semaforo_sensor_descarte.contador>0)
+			{
+				Take_Semaforo_Cont(&semaforo_sensor_descarte);
+			}
+			status = Enviar_aCola(&botellas_desechadas, &cantidad, 0);
+			if (status == NO_ENVIO_DATO){
+				// Error, la cola se lleno. Se prende el LED Rojo
+				gpioWrite(LEDG,false);
+				gpioWrite(LEDR,true);
+			}
 		}
 		os_exit_critical();
 	}
@@ -108,63 +119,63 @@ void ResponderUART(void)  {
 	Cant_botellas_totales = Cant_botellas_ok = Cant_botellas_no = 0;
 	auxiliar = 0;
 	while (1) {
+		//Delay(TIEMPOUART);
 		Take_Semaforo_Bin(&semaforo_UART);
 		/* 
 		 * El semaforo de la UART fue liberado por lo tanto debo extraer las cantidades de las colas y enviar el mensaje
 		*/
 		// Leo la cola con datos fabricados
 		status = RECIBO_DATO;		
-		auxiliar = 0;		
-		os_enter_critical();
+		auxiliar = 0;
 		while (status != NO_RECIBO_DATO)
 		{
 			status = Recibir_dCola(&botellas_fabricadas, &auxiliar, 0);
 			Cant_botellas_ok = Cant_botellas_ok + auxiliar;
 		}
-		os_exit_critical();		
 		// Leo la cola con datos descartados
 		status = RECIBO_DATO;		
 		auxiliar = 0;
-		os_enter_critical();
 		while (status != NO_RECIBO_DATO)
 		{
 			status = Recibir_dCola(&botellas_desechadas, &auxiliar, 0);
 			Cant_botellas_no = Cant_botellas_no + auxiliar;
 		}
-		os_exit_critical();		
 		// Calculo las botellas totales
 		Cant_botellas_totales = Cant_botellas_ok - Cant_botellas_no;
+		// Imprimo el mensaje
+		uartWriteByte(UART_USB,(uint8_t)'T');
+		uartWriteByteArray(UART_USB,&Cant_botellas_totales,4);
+		uartWriteByte(UART_USB,(uint8_t)'F');
+		uartWriteByteArray(UART_USB,&Cant_botellas_ok,4);
+		uartWriteByte(UART_USB,(uint8_t)'D');
+		uartWriteByteArray(UART_USB,&Cant_botellas_no,4);
+		uartWriteByte(UART_USB,'\n');
+
 		// Envio el mensaje
-		printf( "Cant Totales: %d\t Cant Fabricadas: %d\t Cant Descartadas: %d\n",Cant_botellas_totales,Cant_botellas_ok,Cant_botellas_no );
+		// Por alg�n motivo el uso de las funcioens printf o sprintf llevan a hard fault
+		//printf( "Cant Totales: %d\t Cant Fabricadas: %d\t Cant Descartadas: %d\n",Cant_botellas_totales,Cant_botellas_ok,Cant_botellas_no );
 		// Reseteo los contadores
 		Cant_botellas_totales = Cant_botellas_ok = Cant_botellas_no = 0; 
 	}
 }
 
 void Handler_sensor2(void)  {
-	gpioToggle(LED2);
-	Give_Semaforo_Cont(&semaforo_sensor_estrusor);
+
+	if ( Chip_PININT_GetRiseStates( LPC_GPIO_PIN_INT ) & PININTCH3 )
+	{
+		Chip_PININT_ClearIntStatus( LPC_GPIO_PIN_INT, PININTCH3 );
+		gpioToggle(LED3);
+		Give_Semaforo_Cont(&semaforo_sensor_descarte);
+	}
+
 }
 void Handler_sensor1(void)  {
-	gpioToggle(LED3);
-	Give_Semaforo_Cont(&semaforo_sensor_descarte);
-}
 
-void Handler_Comunicacion(void)  {
-	static uint8_t BufferCounter = 0;
-	uint8_t readByte;
-	readByte = uartRxRead( UART_USB );
-	if (BufferCounter < CANT_BUFFER){
-		BufferUart[BufferCounter] = (char)readByte;
-		if(readByte == StopMessage){
-			bufferSizeUart = BufferCounter;
-			BufferCounter = 0;
-			Give_Semaforo_Bin(&semaforo_UART);
-		}else{
-			BufferCounter++;
-		}
-	}else{
-		BufferCounter = 0;
+	if ( Chip_PININT_GetRiseStates( LPC_GPIO_PIN_INT ) & PININTCH1 )
+	{
+		Chip_PININT_ClearIntStatus( LPC_GPIO_PIN_INT, PININTCH1 );
+		gpioToggle(LED2);
+		Give_Semaforo_Cont(&semaforo_sensor_estrusor);
 	}
 }
 
@@ -178,66 +189,46 @@ static void initHardware(void)  {
 
 	// Inicializar UART_USB a 115200 baudios
     uartInit( UART_USB, UART_BR );     
-    // // Seteo un callback al evento de recepcion y habilito su interrupcion
-    // uartCallbackSet(UART_USB, UART_RECEIVE, onRx, NULL);
-    // // Habilito todas las interrupciones de UART_USB
-    // uartInterrupt(UART_USB, true);
-	// Button objects
-	// button_t Sensor1;
-   	// button_t Sensor2;
 
-    // // Sensor 0 is handled with callbacks
-    // buttonInit( &Sensor1,                  // Button structure (object)
-    //            SENSORESTRUSOR, BUTTON_LOGIC,       // Pin and electrical connection
-    //            SENSORSCANTIME,                          // Button scan time [ms]
-    //            FALSE,                        // checkPressedEvent
-    //            FALSE,                        // checkReleasedEvent
-    //            TRUE,                        // checkHoldPressedEvent
-    //            SENSORPRESSTIME,                        // holdPressedTime [ms]
-    //            0,    // pressedCallback
-    //            0,   // releasedCallback
-    //            Handler_sensor1 // holdPressedCallback
-    //          );
 
-	// // Sensor 1 is handled with callbacks
-    // buttonInit( &Sensor2,SENSORDESCARTE, BUTTON_LOGIC,SENSORSCANTIME,FALSE,FALSE,TRUE,SENSORPRESSTIME,0,0,Handler_sensor2);
+	//Inicializamos las interrupciones (LPCopen)
+	Chip_PININT_Init( LPC_GPIO_PIN_INT );
 
-	/*
-	 * Seteamos la interrupcion 0 para el flanco descendente en la tecla 1
-	 */
-	Chip_SCU_GPIOIntPinSel( 0, TEC1_PORT_NUM, TEC1_BIT_VAL );
-	Chip_PININT_ClearIntStatus( LPC_GPIO_PIN_INT, PININTCH( 6 ) ); // INT0 flanco descendente
-	Chip_PININT_SetPinModeEdge( LPC_GPIO_PIN_INT, PININTCH( 6 ) );
-	Chip_PININT_EnableIntLow( LPC_GPIO_PIN_INT, PININTCH( 6 ) );
+	//Inicializamos de cada evento de interrupcion (LPCopen)
 
-	// /*
-	//  * Seteamos la interrupcion 1 para el flanco ascendente en la tecla 1
-	//  */
-	// Chip_SCU_GPIOIntPinSel( 1, TEC1_PORT_NUM, TEC1_BIT_VAL );
-	// Chip_PININT_ClearIntStatus( LPC_GPIO_PIN_INT, PININTCH( 1 ) ); // INT1 flanc
-	// Chip_PININT_SetPinModeEdge( LPC_GPIO_PIN_INT, PININTCH( 1 ) );
-	// Chip_PININT_EnableIntHigh( LPC_GPIO_PIN_INT, PININTCH( 1 ) );
-	
-	/*
-	 * Seteamos la interrupcion 0 para el flanco descendente en la tecla 1
-	 */
-	Chip_SCU_GPIOIntPinSel( 0, TEC2_PORT_NUM, TEC2_BIT_VAL );
-	Chip_PININT_ClearIntStatus( LPC_GPIO_PIN_INT, PININTCH( 7 ) ); // INT0 flanco descendente
-	Chip_PININT_SetPinModeEdge( LPC_GPIO_PIN_INT, PININTCH( 7 ) );
-	Chip_PININT_EnableIntLow( LPC_GPIO_PIN_INT, PININTCH( 7 ) );
+	/* Machete:
+	GLOBAL! extern pinInitGpioLpc4337_t gpioPinsInit[];
+	Chip_SCU_GPIOIntPinSel( j,  gpioPinsInit[i].gpio.port, gpioPinsInit[i].gpio.pin );   // TECi
+	Chip_PININT_ClearIntStatus( LPC_GPIO_PIN_INT, PININTCH( j ) );                      // INTj (canal j -> hanlder GPIOj)       //Borra el pending de la IRQ
+	Chip_PININT_SetPinModeEdge( LPC_GPIO_PIN_INT, PININTCH( j ) );                      // INTj //Selecciona activo por flanco
+	Chip_PININT_EnableIntLow( LPC_GPIO_PIN_INT, PININTCH( j ) );                        // INTj //Selecciona activo por flanco descendente
+	Chip_PININT_EnableIntHigh( LPC_GPIO_PIN_INT, PININTCH( j ) );                       // INTj //Selecciona activo por flanco ascendente
+	*/
 
-	// /*
-	//  * Seteamos la interrupcion 1 para el flanco ascendente en la tecla 1
-	//  */
-	// Chip_SCU_GPIOIntPinSel( 1, TEC1_PORT_NUM, TEC1_BIT_VAL );
-	// Chip_PININT_ClearIntStatus( LPC_GPIO_PIN_INT, PININTCH( 1 ) ); // INT1 flanc
-	// Chip_PININT_SetPinModeEdge( LPC_GPIO_PIN_INT, PININTCH( 1 ) );
-	// Chip_PININT_EnableIntHigh( LPC_GPIO_PIN_INT, PININTCH( 1 ) );
+	/*Seteo la interrupción para el flanco descendente
+						channel, GPIOx,                        [y]    <- no es la config del pin, sino el nombre interno de la señal
+							|       |                           |
+							|       |                           |    */
 
-	// gpioObtainPinInit( pin, &pinNamePort, &pinNamePin, &func,
-    //                   &gpioPort, &gpioPin );
-	// { {1, 0}, FUNC0, {0, 4} },   // 36   TEC1    TEC_1  
-    // { {1, 1}, FUNC0, {0, 8} },   // 37   TEC2    TEC_2 
+	// // TEC1 FALL
+	// Chip_SCU_GPIOIntPinSel( 0, 0, 4 ); 	//(Canal 0 a 7, Puerto GPIO, Pin GPIO)
+	// Chip_PININT_SetPinModeEdge( LPC_GPIO_PIN_INT, PININTCH0 ); //Se configura el canal para que se active por flanco
+	// Chip_PININT_EnableIntLow( LPC_GPIO_PIN_INT, PININTCH0 ); //Se configura para que el flanco sea el de bajada
+
+	// TEC1 RISE
+	Chip_SCU_GPIOIntPinSel( TEC1_PORT_NUM, 0, TEC1_BIT_VAL );	//(Canal 0 a 7, Puerto GPIO, Pin GPIO)
+	Chip_PININT_SetPinModeEdge( LPC_GPIO_PIN_INT, PININTCH1 ); //Se configura el canal para que se active por flanco
+	Chip_PININT_EnableIntHigh( LPC_GPIO_PIN_INT, PININTCH1 ); //En este caso el flanco es de subida
+
+	// // TEC2 FALL
+	// Chip_SCU_GPIOIntPinSel( 2, 0, 8 );
+	// Chip_PININT_SetPinModeEdge( LPC_GPIO_PIN_INT, PININTCH2 );
+	// Chip_PININT_EnableIntLow( LPC_GPIO_PIN_INT, PININTCH2 );
+
+	// TEC2 RISE
+	Chip_SCU_GPIOIntPinSel( TEC2_PORT_NUM, 0, TEC2_BIT_VAL );
+	Chip_PININT_SetPinModeEdge( LPC_GPIO_PIN_INT, PININTCH3 );
+	Chip_PININT_EnableIntHigh( LPC_GPIO_PIN_INT, PININTCH3 );
 }
 
 /*============================================================================*/
@@ -259,15 +250,14 @@ int main(void)  {
 	// Tarea que responde el mensaje por UART
 	os_InitTarea(&tareaStructUart,ResponderUART,6,3,"tareaUart");
 
-	status = os_AddIRQ(USART2_IRQn, Handler_Comunicacion);
-	if (status) gpioWrite(LEDG,true);
-	else errorHook();
-	status = os_AddIRQ(PIN_INT6_IRQn, Handler_sensor1);
-	if (status) gpioToggle(LEDG);
-	else errorHook();
-	status = os_AddIRQ(PIN_INT7_IRQn, Handler_sensor2);
-	if (status) gpioToggle(LEDG);
-	else errorHook();
+	// status = os_AddIRQ(USART2_IRQn, Handler_Comunicacion);
+	// if (!status)errorHook();
+
+	status = os_AddIRQ(PIN_INT1_IRQn, Handler_sensor1);
+	if (!status)errorHook();
+	
+	status = os_AddIRQ(PIN_INT3_IRQn, Handler_sensor2);
+	if (!status)errorHook();
 
 	// Inicializao el semaforo binario que habilitará la UART
 	Init_Semaforo_Bin(&semaforo_UART);
@@ -278,12 +268,11 @@ int main(void)  {
 
 	// Inicializo las colas que guardan los datos cada el tiempo definido
 	status = Init_Cola(	&botellas_fabricadas, TIPODATOCOLA, CANTIDADCOLAOK);
-	if (status) gpioToggle(LEDG);
-	else errorHook();
+	if (!status)errorHook();
 	status = Init_Cola(	&botellas_desechadas, TIPODATOCOLA, CANTIDADCOLADESCARTE);
-	if (status) gpioToggle(LEDG);
-	else errorHook();
+	if (!status)errorHook();
 
+	gpioToggle(LEDG);
 	// Inicializo el SO
 	os_SistemInit();
 

@@ -143,7 +143,9 @@ void Take_Semaforo_Cont(semaforo_cont* semaforo_contador){
 ***************************************************************************************************/
 void Give_Semaforo_Cont(semaforo_cont* semaforo_contador){
 	// En caso de que el contador no haya llegado al maximo, aumento su valor
-	if (semaforo_contador->contador <= semaforo_contador->maximo)semaforo_contador->contador++;
+	if (semaforo_contador->contador <= semaforo_contador->maximo){
+		semaforo_contador->contador++;
+	}
 
 	// En caso de que se haya llamado desde una IRQ, hago un rescheduling
 	if (os_Estado() == OS_INTERRUPT)CpuYield();
@@ -188,7 +190,7 @@ bool Init_Cola(	cola* p_cola, uint16_t	tipo_dato, uint16_t	cant_datos){
 	 *  @param 		ticks_wait		cantidad de ticks a esperar en caso de que la cola esté llena 
 	 *  @return     estado de la cola al enviar el dato
 ***************************************************************************************************/
-estadoCola Enviar_aCola(cola* p_cola, uint32_t	*dato, uint32_t ticks_wait){
+estadoCola Enviar_aCola(cola* p_cola, uint8_t	*dato, uint32_t ticks_wait){
 	uint16_t i;
 	tarea * p_actualTask;
 	estadoCola status;
@@ -202,7 +204,7 @@ estadoCola Enviar_aCola(cola* p_cola, uint32_t	*dato, uint32_t ticks_wait){
 		if(p_cola->index < p_cola->posicion_fin){
 			for (i = 0; i < p_cola->tamanio_dato; i++)
 			{
-				p_cola->valor[p_cola->index+i] = dato[i];			
+				p_cola->valor[p_cola->index+i] = dato[i];
 			}
 			p_cola->index = p_cola->index + p_cola->tamanio_dato;
 			// Veo cuando se envio y actualiza el estado
@@ -259,7 +261,7 @@ estadoCola Enviar_aCola(cola* p_cola, uint32_t	*dato, uint32_t ticks_wait){
 	 *  @param 		ticks_wait		cantidad de ticks a esperar en caso de que la cola no tenga datos 
 	 *  @return     None
 ***************************************************************************************************/
-estadoCola Recibir_dCola(cola* p_cola, uint32_t	*dato, uint32_t ticks_wait){
+estadoCola Recibir_dCola(cola* p_cola, uint8_t	*dato, uint32_t ticks_wait){
 	uint16_t i;
 	tarea * p_actualTask;
 	estadoCola status;

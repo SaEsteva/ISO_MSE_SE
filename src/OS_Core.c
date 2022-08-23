@@ -300,6 +300,8 @@ static void scheduler(void)  {
 		controlStrct_OS.prioridad_actual = P_TASKIDLE;
 		break;
 	
+	case OS_INTERRUPT:
+		controlStrct_OS.next_task = true;
 	case OS_RUNNING:
 		/*
 		 * Si el estado del sistema se encuentra en RUNNING, el scheduler debe realizar el cambio hacia la tarea siguiente
@@ -327,8 +329,12 @@ static void scheduler(void)  {
 					 * se utiliza como "buscador" de esta tarea ya que el flag prioridad_flag se encuentra activado.
 					 *
 					 */
-					if(!prioridad_flag)index_inicial_p_actual = index_inicial_p_actual+(index_task_array+1)%cant_misma_prioridad;
-					else index_inicial_p_actual = (index_task_array+1)%cant_misma_prioridad;
+					if(!prioridad_flag){
+						index_inicial_p_actual = index_inicial_p_actual+(index_task_array+1)%cant_misma_prioridad;
+					}
+					else{
+						index_inicial_p_actual = (index_task_array+1)%cant_misma_prioridad;
+					}
 					prioridad_flag = 1;
 				}else{
 					controlStrct_OS.index_tareas = index_task_array;

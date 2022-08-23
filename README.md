@@ -115,23 +115,24 @@ El sistema debe realizar lo siguiente:
 - Contar la cantidad de botellas que salen del estrusor.
 - Contar la cantidad de botellas que se descartan.
 - Contar la cantidad de botellas fabricadas exitosamente.
-- Atender y responder la consulta por UART del operario sobre las tres cantidades de botellas posibles.
+- Enviar cada un tiempo determinado por UART, al operario, las tres cantidades de botellas en el último tiempo.
 - Contar con leds de estado por cada uno de los dos sensores inductivos.
 
 Los sensores inductivos serán representados por los botones de la Placa EDU-CIAA, contarán con un proceso de rebote similar a lo que se tendría con una señal digital de un sensor inductivo.
 
-La trama de comunicación entre el la PC y la EDU-CIAA será "Indicar Valores Registados\n" en la solcitud y la respuesta será "Cant Totales: XX\t Cant Fabricadas: YY\t Cant Descartadas: ZZ\n" con XX, YY y ZZ los últimos valores registados.
+La trama de comunicación entre el la PC y la EDU-CIAA será "TXXXXFYYYYDZZZZ\n" con XXXX, YYYY y ZZZZ los últimos valores registados.
 
-Luego de cada consulta por parte del operario, se resetearán los valores de conteo y se inicia con un nuevo batch de datos.
+Luego de cada mensaje enviado al operario, se resetearán los valores de conteo y se inicia con un nuevo batch de datos.
 
 ## Solucion del Ejemplo
 El ejercicio puede ser resuelto de infinidad de maneras, sin embargo la que se plantea en este caso, pretende utilizar la mayor cantidad de funciones para corroborar su funcionamiento. Se crean tras interrupciones de Hardware:
-- **Handler_Comunicacion**: Recepcion de UART, entrega el semáforo binario **semaforo_UART** una vez que recibe un mensaje con fin de linea.
-- **Handler_sensor1**: Lecuta de la tecla 1 al ser presionada para simular el sensor 1, aumenta el contador **semaforo_sensor_descarte** cada vez que se ejcuta.
-- **Handler_sensor2**: Lecuta de la tecla 2 al ser presionada para simular el sensor 2, aumenta el contador **semaforo_sensor_estrusor** cada vez que se ejcuta.
+- **Handler_sensor1**: Lecuta de la tecla 1 al ser presionada para simular el sensor 1, aumenta el contador **semaforo_sensor_estrusor** cada vez que se ejcuta.
+- **Handler_sensor2**: Lecuta de la tecla 2 al ser presionada para simular el sensor 2, aumenta el contador **semaforo_sensor_descarte** cada vez que se ejcuta.
 
 Para el ciclo normal de funcionamiento se cuenta con 4 tareas:
-- **tareaLed** : Tarea de baja prioridad que togglea un led.
+- **tareaLed** : Tarea de baja prioridad que togglea un led en señal de Heart Beat y luego de un cierto tiempo, libera el semáforo binario **semaforo_UART** para que se envíe el dato.
 - **ContarBotellasEstrusor** : Tarea de alta prioridad que cada **TIEMPOMUESTRASBOTELLAS** ticks de sistema optiene el valor del semáforo contador correspondinete y lo carga en la cola **botellas_fabricadas**
 - **ContarBotellasDescarte** : Tarea de alta prioridad que cada **TIEMPOMUESTRASBOTELLAS** ticks de sistema optiene el valor del semáforo contador correspondinete y lo carga en la cola **botellas_desechadas**
-- **ResponderUART** : Tarea de prioridad media que responde el mensaje de UART. Lee los datos de las dos colas (dejandolas vacias), calcula la cantidad de botellas totales y envia el mensaje.
+- **ResponderUART** : Tarea de prioridad media que envía por la UART los ultimos datos procesados cada vez que se habilita el semáforo binario **semaforo_UART**. Lee los datos de las dos colas (dejandolas vacias), calcula la cantidad de botellas totales y envia el mensaje.
+
+El ejemplo se encuentra totalmente funcinal, proximamente se subirá un video que lo demuestre.

@@ -62,8 +62,8 @@ void Init_Semaforo_Cont(semaforo_cont* ,uint16_t , uint16_t );
 void Take_Semaforo_Cont(semaforo_cont* );
 void Give_Semaforo_Cont(semaforo_cont* );
 bool Init_Cola(	cola* , uint16_t	, uint16_t	);
-estadoCola Enviar_aCola(cola* , uint32_t	*, uint32_t );
-estadoCola Recibir_dCola(cola* , uint32_t	*, uint32_t );
+estadoCola Enviar_aCola(cola* , uint8_t	*, uint32_t );
+estadoCola Recibir_dCola(cola* , uint8_t	*, uint32_t );
 void CpuYield(void);
 
 #endif

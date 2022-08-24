@@ -135,4 +135,8 @@ Para el ciclo normal de funcionamiento se cuenta con 4 tareas:
 - **ContarBotellasDescarte** : Tarea de alta prioridad que cada **TIEMPOMUESTRASBOTELLAS** ticks de sistema optiene el valor del semáforo contador correspondinete y lo carga en la cola **botellas_desechadas**
 - **ResponderUART** : Tarea de prioridad media que envía por la UART los ultimos datos procesados cada vez que se habilita el semáforo binario **semaforo_UART**. Lee los datos de las dos colas (dejandolas vacias), calcula la cantidad de botellas totales y envia el mensaje.
 
-El ejemplo se encuentra totalmente funcinal, proximamente se subirá un video que lo demuestre.
+El ejemplo se encuentra totalmente funcinal como se puede observar en el siguiente video:
+
+
+https://user-images.githubusercontent.com/44267876/186425029-cb5b7d82-5c07-4e37-9ace-3879a21131ed.mp4
+
